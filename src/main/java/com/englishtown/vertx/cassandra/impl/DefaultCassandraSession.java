@@ -95,12 +95,26 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     @Override
+    public PreparedStatement prepare(RegularStatement statement) {
+        return session.prepare(statement);
+    }
+
+    @Override
+    public PreparedStatement prepare(String query) {
+        return session.prepare(query);
+    }
+
+    @Override
     public Metadata getMetadata() {
         return metadata;
     }
 
     @Override
     public void close() throws Exception {
+        if (session != null) {
+            session.shutdown();
+            session = null;
+        }
         if (cluster != null) {
             cluster.shutdown();
             cluster = null;

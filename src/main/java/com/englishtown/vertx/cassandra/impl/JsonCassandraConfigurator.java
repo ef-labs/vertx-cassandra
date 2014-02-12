@@ -1,6 +1,5 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;

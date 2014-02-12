@@ -2,6 +2,7 @@ package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Before;
@@ -200,6 +201,22 @@ public class DefaultCassandraSessionTest {
     }
 
     @Test
+    public void testPrepare_Statement() throws Exception {
+        RegularStatement statement = QueryBuilder
+                .select()
+                .from("ks", "table")
+                .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
+
+        cassandraSession.prepare(statement);
+    }
+
+    @Test
+    public void testPrepare_Query() throws Exception {
+        String query = "SELECT * FROM ks.table where id = ?";
+        cassandraSession.prepare(query);
+    }
+
+    @Test
     public void testGetMetadata() throws Exception {
 
         assertEquals(metadata, cassandraSession.getMetadata());
@@ -210,5 +227,6 @@ public class DefaultCassandraSessionTest {
     public void testClose() throws Exception {
         cassandraSession.close();
         verify(cluster).shutdown();
+        verify(session).shutdown();
     }
 }

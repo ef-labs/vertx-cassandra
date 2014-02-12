@@ -1,8 +1,7 @@
 package com.englishtown.vertx.cassandra.integration;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
@@ -31,8 +30,21 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
         ResultSet rs = session.execute(CQL_CREATE_KEYSPACE);
         VertxAssert.assertNotNull(rs);
-        VertxAssert.testComplete();
 
+        session.execute("CREATE TABLE " + TEST_KEYSPACE + ".test (id text PRIMARY KEY, value text)");
+
+        RegularStatement statement = QueryBuilder
+                .select()
+                .from(TEST_KEYSPACE, "test")
+                .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
+
+        PreparedStatement prepared = session.prepare(statement);
+
+        BoundStatement bound = prepared.bind("123");
+        rs = session.execute(bound);
+        VertxAssert.assertNotNull(rs);
+
+        VertxAssert.testComplete();
     }
 
     @Test
@@ -78,5 +90,18 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
         startedResult.setResult(null);
         start();
+    }
+
+    /**
+     * Vert.x calls the stop method when the verticle is undeployed.
+     * Put any cleanup code for your verticle in here
+     */
+    @Override
+    public void stop() {
+        try {
+            session.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

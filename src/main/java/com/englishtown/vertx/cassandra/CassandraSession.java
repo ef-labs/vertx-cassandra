@@ -1,8 +1,6 @@
 package com.englishtown.vertx.cassandra;
 
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.*;
 import com.google.common.util.concurrent.FutureCallback;
 
 /**
@@ -43,6 +41,26 @@ public interface CassandraSession extends AutoCloseable {
      * @param query the CQL query to execute
      */
     ResultSet execute(String query);
+
+    /**
+     * Prepares the provided query statement
+     * <p/>
+     * Use with caution as this will block!
+     *
+     * @param statement the query statement to prepare
+     * @return a prepared statement
+     */
+    PreparedStatement prepare(RegularStatement statement);
+
+    /**
+     * Prepares the provided query
+     * <p/>
+     * Use with caution as this will block!
+     *
+     * @param query the query to prepare
+     * @return a prepared statement
+     */
+    PreparedStatement prepare(String query);
 
     /**
      * Returns cassandra metadata
