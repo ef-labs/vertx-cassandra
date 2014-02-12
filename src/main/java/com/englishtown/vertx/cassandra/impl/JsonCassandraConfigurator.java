@@ -1,6 +1,9 @@
 package com.englishtown.vertx.cassandra.impl;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
@@ -19,6 +22,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     private List<String> seeds;
     private LoadBalancingPolicy loadBalancingPolicy;
+    private PoolingOptions poolingOptions;
     private ConsistencyLevel consistency;
 
     public static final String CONFIG_SEEDS = "seeds";
@@ -57,6 +61,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         return consistency;
     }
 
+    @Override
+    public PoolingOptions getPoolingOptions() {
+        return poolingOptions;
+    }
+
     protected void init(JsonObject config) {
 
         // Get array of IPs, default to localhost
@@ -71,6 +80,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
 
         initPolicies(config);
+        initPoolingOptions(config);
         consistency = getConsistency(config);
 
     }
@@ -122,6 +132,52 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
             }
         }
+    }
+
+    public void initPoolingOptions(JsonObject config) {
+
+        JsonObject poolingConfig = config.getObject("pooling");
+
+        if (poolingConfig == null) {
+            return;
+        }
+
+        poolingOptions = new PoolingOptions();
+
+        Integer core_connections_per_host_local = poolingConfig.getInteger("core_connections_per_host_local");
+        Integer core_connections_per_host_remote = poolingConfig.getInteger("core_connections_per_host_remote");
+        Integer max_connections_per_host_local = poolingConfig.getInteger("max_connections_per_host_local");
+        Integer max_connections_per_host_remote = poolingConfig.getInteger("max_connections_per_host_remote");
+        Integer min_simultaneous_requests_local = poolingConfig.getInteger("min_simultaneous_requests_local");
+        Integer min_simultaneous_requests_remote = poolingConfig.getInteger("min_simultaneous_requests_remote");
+        Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
+        Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
+
+        if (core_connections_per_host_local != null) {
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, core_connections_per_host_local.intValue());
+        }
+        if (core_connections_per_host_remote != null) {
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, core_connections_per_host_remote.intValue());
+        }
+        if (max_connections_per_host_local != null) {
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, max_connections_per_host_local.intValue());
+        }
+        if (max_connections_per_host_remote != null) {
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, max_connections_per_host_remote.intValue());
+        }
+        if (min_simultaneous_requests_local != null) {
+            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, min_simultaneous_requests_local.intValue());
+        }
+        if (min_simultaneous_requests_remote != null) {
+            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, min_simultaneous_requests_remote.intValue());
+        }
+        if (max_simultaneous_requests_local != null) {
+            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local.intValue());
+        }
+        if (max_simultaneous_requests_remote != null) {
+            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote.intValue());
+        }
+
     }
 
     protected ConsistencyLevel getConsistency(JsonObject config) {

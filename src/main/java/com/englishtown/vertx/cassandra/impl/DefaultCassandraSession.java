@@ -55,6 +55,11 @@ public class DefaultCassandraSession implements CassandraSession {
             builder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
         }
 
+        // Add pooling options to cluster builder
+        if (configurator.getPoolingOptions() != null) {
+            builder.withPoolingOptions(configurator.getPoolingOptions());
+        }
+
         // Build cluster and session
         cluster = builder.build();
         session = cluster.connect();

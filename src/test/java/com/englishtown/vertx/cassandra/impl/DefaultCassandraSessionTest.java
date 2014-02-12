@@ -133,10 +133,13 @@ public class DefaultCassandraSessionTest {
 
         LoadBalancingPolicy lbPolicy = mock(LoadBalancingPolicy.class);
         when(configurator.getLoadBalancingPolicy()).thenReturn(lbPolicy);
+        PoolingOptions options = mock(PoolingOptions.class);
+        when(configurator.getPoolingOptions()).thenReturn(options);
 
         cassandraSession.init(configurator);
         verify(clusterBuilder, times(3)).addContactPoint(anyString());
         verify(clusterBuilder).withLoadBalancingPolicy(eq(lbPolicy));
+        verify(clusterBuilder).withPoolingOptions(eq(options));
         verify(clusterBuilder).build();
         verify(cluster).connect();
         verify(cluster).getMetadata();

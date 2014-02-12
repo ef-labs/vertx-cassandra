@@ -133,6 +133,38 @@ public class JsonCassandraConfiguratorTest {
     }
 
     @Test
+    public void testGetPoolingOptions() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getPoolingOptions());
+
+        config.putObject("pooling", new JsonObject()
+                .putNumber("core_connections_per_host_local", 1)
+                .putNumber("core_connections_per_host_remote", 2)
+                .putNumber("max_connections_per_host_local", 3)
+                .putNumber("max_connections_per_host_remote", 4)
+                .putNumber("min_simultaneous_requests_local", 5)
+                .putNumber("min_simultaneous_requests_remote", 6)
+                .putNumber("max_simultaneous_requests_local", 7)
+                .putNumber("max_simultaneous_requests_remote", 8)
+        );
+
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getPoolingOptions());
+
+        PoolingOptions options = configurator.getPoolingOptions();
+        assertEquals(1, options.getCoreConnectionsPerHost(HostDistance.LOCAL));
+        assertEquals(2, options.getCoreConnectionsPerHost(HostDistance.REMOTE));
+        assertEquals(3, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
+        assertEquals(4, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
+        assertEquals(5, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(6, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+        assertEquals(7, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(8, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+
+    }
+
+    @Test
     public void testGetConsistency() throws Exception {
 
         JsonCassandraConfigurator configurator;
