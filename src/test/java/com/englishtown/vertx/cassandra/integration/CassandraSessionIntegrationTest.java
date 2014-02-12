@@ -68,10 +68,8 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
             }
         };
 
-        session = new DefaultCassandraSession(builderProvider, vertx);
-
         CassandraConfigurator configurator = new JsonCassandraConfigurator(container);
-        session.init(configurator);
+        session = new DefaultCassandraSession(builderProvider, configurator, vertx);
 
         Metadata metadata = session.getMetadata();
         if (metadata.getKeyspace(TEST_KEYSPACE) != null) {

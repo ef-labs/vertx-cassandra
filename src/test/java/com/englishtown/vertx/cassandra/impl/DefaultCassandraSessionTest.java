@@ -112,7 +112,7 @@ public class DefaultCassandraSessionTest {
         when(configurator.getSeeds()).thenReturn(seeds);
         seeds.add("127.0.0.1");
 
-        cassandraSession = new DefaultCassandraSession(provider, vertx);
+        cassandraSession = new DefaultCassandraSession(provider, configurator, vertx);
 
     }
 
@@ -120,13 +120,6 @@ public class DefaultCassandraSessionTest {
     public void testInit() throws Exception {
 
         seeds.clear();
-        try {
-            cassandraSession.init(configurator);
-            fail();
-        } catch (Throwable t) {
-            // Expected
-        }
-
         seeds.add("127.0.0.1");
         seeds.add("127.0.0.2");
         seeds.add("127.0.0.3");
@@ -137,12 +130,20 @@ public class DefaultCassandraSessionTest {
         when(configurator.getPoolingOptions()).thenReturn(options);
 
         cassandraSession.init(configurator);
-        verify(clusterBuilder, times(3)).addContactPoint(anyString());
+        verify(clusterBuilder, times(4)).addContactPoint(anyString());
         verify(clusterBuilder).withLoadBalancingPolicy(eq(lbPolicy));
         verify(clusterBuilder).withPoolingOptions(eq(options));
-        verify(clusterBuilder).build();
-        verify(cluster).connect();
-        verify(cluster).getMetadata();
+        verify(clusterBuilder, times(2)).build();
+        verify(cluster, times(2)).connect();
+        verify(cluster, times(2)).getMetadata();
+
+        seeds.clear();
+        try {
+            cassandraSession.init(configurator);
+            fail();
+        } catch (Throwable t) {
+            // Expected
+        }
 
     }
 
@@ -153,14 +154,6 @@ public class DefaultCassandraSessionTest {
         ResultSetFuture future = mock(ResultSetFuture.class);
         when(session.executeAsync(any(Statement.class))).thenReturn(future);
 
-        try {
-            cassandraSession.executeAsync(statement, callback);
-            fail();
-        } catch (IllegalStateException e) {
-            // Expected
-        }
-
-        cassandraSession.init(configurator);
         cassandraSession.executeAsync(statement, callback);
         verify(session).executeAsync(eq(statement));
         verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
@@ -188,14 +181,6 @@ public class DefaultCassandraSessionTest {
         ResultSetFuture future = mock(ResultSetFuture.class);
         when(session.executeAsync(any(Statement.class))).thenReturn(future);
 
-        try {
-            cassandraSession.executeAsync(query, callback);
-            fail();
-        } catch (IllegalStateException e) {
-            // Expected
-        }
-
-        cassandraSession.init(configurator);
         cassandraSession.executeAsync(query, callback);
         verify(session).executeAsync(statementCaptor.capture());
         assertEquals(query, statementCaptor.getValue().toString());
@@ -208,14 +193,6 @@ public class DefaultCassandraSessionTest {
 
         String query = "SELECT * FROM table;";
 
-        try {
-            cassandraSession.execute(query);
-            fail();
-        } catch (IllegalStateException e) {
-            // Expected
-        }
-
-        cassandraSession.init(configurator);
         cassandraSession.execute(query);
         verify(session).execute(statementCaptor.capture());
         assertEquals(query, statementCaptor.getValue().toString());
@@ -225,21 +202,12 @@ public class DefaultCassandraSessionTest {
     @Test
     public void testGetMetadata() throws Exception {
 
-        try {
-            cassandraSession.getMetadata();
-            fail();
-        } catch (IllegalStateException e) {
-            // Expected
-        }
-
-        cassandraSession.init(configurator);
         assertEquals(metadata, cassandraSession.getMetadata());
 
     }
 
     @Test
     public void testClose() throws Exception {
-        cassandraSession.init(configurator);
         cassandraSession.close();
         verify(cluster).shutdown();
     }

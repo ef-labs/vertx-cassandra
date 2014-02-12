@@ -24,18 +24,17 @@ public class DefaultCassandraSession implements CassandraSession {
     protected Cluster cluster;
     protected Session session;
     protected Metadata metadata;
-    protected boolean initialized;
     protected ConsistencyLevel consistency;
 
 
     @Inject
-    public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, Vertx vertx) {
+    public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, CassandraConfigurator configurator, Vertx vertx) {
         this.builderProvider = builderProvider;
         this.vertx = vertx;
+        init(configurator);
     }
 
-    @Override
-    public void init(CassandraConfigurator configurator) {
+    protected void init(CassandraConfigurator configurator) {
 
         // Get array of IPs, default to localhost
         List<String> seeds = configurator.getSeeds();
@@ -66,12 +65,10 @@ public class DefaultCassandraSession implements CassandraSession {
         metadata = cluster.getMetadata();
 
         consistency = configurator.getConsistency();
-        initialized = true;
     }
 
     @Override
     public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        checkInitialized();
         if (consistency != null && statement.getConsistencyLevel() == null) {
             statement.setConsistencyLevel(consistency);
         }
@@ -86,7 +83,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public ResultSet execute(Statement statement) {
-        checkInitialized();
         if (consistency != null && statement.getConsistencyLevel() == null) {
             statement.setConsistencyLevel(consistency);
         }
@@ -100,7 +96,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public Metadata getMetadata() {
-        checkInitialized();
         return metadata;
     }
 
@@ -109,12 +104,6 @@ public class DefaultCassandraSession implements CassandraSession {
         if (cluster != null) {
             cluster.shutdown();
             cluster = null;
-        }
-    }
-
-    protected void checkInitialized() {
-        if (!initialized) {
-            throw new IllegalStateException("The DefaultCassandraSession has not been initialized.");
         }
     }
 

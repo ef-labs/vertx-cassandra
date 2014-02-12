@@ -10,8 +10,6 @@ import com.google.common.util.concurrent.FutureCallback;
  */
 public interface CassandraSession extends AutoCloseable {
 
-    void init(CassandraConfigurator configurator);
-
     /**
      * Executes a cassandra statement asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
