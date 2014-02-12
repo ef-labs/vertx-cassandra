@@ -35,7 +35,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     @Inject
     public JsonCassandraConfigurator(Container container) {
-        init(container.config());
+        this(container.config().getObject("cassandra", new JsonObject()));
+    }
+
+    public JsonCassandraConfigurator(JsonObject config) {
+        init(config);
     }
 
     @Override

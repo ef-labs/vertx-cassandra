@@ -63,7 +63,8 @@ public class JsonCassandraConfiguratorTest {
 
     @Before
     public void setUp() throws Exception {
-        when(container.config()).thenReturn(config);
+        JsonObject baseConfig = new JsonObject().putObject("cassandra", config);
+        when(container.config()).thenReturn(baseConfig);
     }
 
     @Test
