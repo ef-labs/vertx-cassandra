@@ -5,6 +5,7 @@ import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -95,6 +96,18 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     @Override
+    public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
+        ListenableFuture<PreparedStatement> future = session.prepareAsync(statement);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public void prepareAsync(String query, FutureCallback<PreparedStatement> callback) {
+        ListenableFuture<PreparedStatement> future = session.prepareAsync(query);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
     public PreparedStatement prepare(RegularStatement statement) {
         return session.prepare(statement);
     }
@@ -112,11 +125,11 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public void close() throws Exception {
         if (session != null) {
-            session.shutdown();
+            session.close();
             session = null;
         }
         if (cluster != null) {
-            cluster.shutdown();
+            cluster.close();
             cluster = null;
         }
     }

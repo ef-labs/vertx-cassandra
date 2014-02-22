@@ -5,6 +5,7 @@ import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,6 +55,10 @@ public class DefaultCassandraSessionTest {
     Metadata metadata;
     @Mock
     FutureCallback<ResultSet> callback;
+    @Mock
+    ListenableFuture<PreparedStatement> preparedStatementFuture;
+    @Mock
+    FutureCallback<PreparedStatement> preparedStatementCallback;
     @Captor
     ArgumentCaptor<Statement> statementCaptor;
     @Captor
@@ -96,7 +101,7 @@ public class DefaultCassandraSessionTest {
     @Before
     public void setUp() {
 
-        when(vertx.currentContext()).thenReturn(context);
+        when(vertx.currentContext()).thenReturn(context).thenReturn(null);
 
         when(clusterBuilder.build()).thenReturn(cluster);
         when(cluster.connect()).thenReturn(session);
@@ -112,6 +117,9 @@ public class DefaultCassandraSessionTest {
         when(configurator.getConsistency()).thenReturn(LOCAL_QUORUM);
         when(configurator.getSeeds()).thenReturn(seeds);
         seeds.add("127.0.0.1");
+
+        when(session.prepareAsync(any(RegularStatement.class))).thenReturn(preparedStatementFuture);
+        when(session.prepareAsync(anyString())).thenReturn(preparedStatementFuture);
 
         cassandraSession = new DefaultCassandraSession(provider, configurator, vertx);
 
@@ -201,6 +209,26 @@ public class DefaultCassandraSessionTest {
     }
 
     @Test
+    public void testPrepareAsync_Statement() throws Exception {
+        RegularStatement statement = QueryBuilder
+                .select()
+                .from("ks", "table")
+                .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
+
+        cassandraSession.prepareAsync(statement, preparedStatementCallback);
+        verify(session).prepareAsync(eq(statement));
+        verify(preparedStatementFuture).addListener(any(Runnable.class), any(Executor.class));
+    }
+
+    @Test
+    public void testPrepareAsync_Query() throws Exception {
+        String query = "SELECT * FROM ks.table where id = ?";
+        cassandraSession.prepareAsync(query, preparedStatementCallback);
+        verify(session).prepareAsync(eq(query));
+        verify(preparedStatementFuture).addListener(any(Runnable.class), any(Executor.class));
+    }
+
+    @Test
     public void testPrepare_Statement() throws Exception {
         RegularStatement statement = QueryBuilder
                 .select()
@@ -208,12 +236,14 @@ public class DefaultCassandraSessionTest {
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
 
         cassandraSession.prepare(statement);
+        verify(session).prepare(eq(statement));
     }
 
     @Test
     public void testPrepare_Query() throws Exception {
         String query = "SELECT * FROM ks.table where id = ?";
         cassandraSession.prepare(query);
+        verify(session).prepare(eq(query));
     }
 
     @Test
@@ -226,7 +256,7 @@ public class DefaultCassandraSessionTest {
     @Test
     public void testClose() throws Exception {
         cassandraSession.close();
-        verify(cluster).shutdown();
-        verify(session).shutdown();
+        verify(cluster).close();
+        verify(session).close();
     }
 }
