@@ -19,10 +19,10 @@ import java.util.List;
  */
 public class JsonCassandraConfigurator implements CassandraConfigurator {
 
-    private List<String> seeds;
-    private LoadBalancingPolicy loadBalancingPolicy;
-    private PoolingOptions poolingOptions;
-    private ConsistencyLevel consistency;
+    protected List<String> seeds;
+    protected LoadBalancingPolicy loadBalancingPolicy;
+    protected PoolingOptions poolingOptions;
+    protected ConsistencyLevel consistency;
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
@@ -67,6 +67,15 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected void init(JsonObject config) {
 
+        initSeeds(config);
+        initPolicies(config);
+        initPoolingOptions(config);
+        consistency = getConsistency(config);
+
+    }
+
+    protected void initSeeds(JsonObject config) {
+
         // Get array of IPs, default to localhost
         JsonArray seeds = config.getArray(CONFIG_SEEDS);
         if (seeds == null || seeds.size() == 0) {
@@ -77,11 +86,6 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         for (int i = 0; i < seeds.size(); i++) {
             this.seeds.add(seeds.<String>get(i));
         }
-
-        initPolicies(config);
-        initPoolingOptions(config);
-        consistency = getConsistency(config);
-
     }
 
     protected void initPolicies(JsonObject config) {
