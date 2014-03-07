@@ -46,15 +46,15 @@ public interface CassandraSession extends AutoCloseable {
      * Prepares the provided query statement
      *
      * @param statement the query statement to prepare
-     * @param callback the callback for on
+     * @param callback  the callback for on completion
      */
     void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback);
 
     /**
      * Prepares the provided query
      *
-     * @param query the query to prepare
-     * @param callback
+     * @param query    the query to prepare
+     * @param callback the callback for on completion
      */
     void prepareAsync(String query, FutureCallback<PreparedStatement> callback);
 

@@ -21,7 +21,6 @@ public class CassandraSessionBinder extends AbstractBinder {
     protected void configure() {
         bind(Cluster.Builder.class).to(Cluster.Builder.class);
         bind(DefaultCassandraSession.class).to(CassandraSession.class).in(Singleton.class);
-//        bind(EnvironmentCassandraConfigurator.class).to(CassandraConfigurator.class).in(Singleton.class).ranked(10);
         bind(EnvironmentCassandraConfigurator.class).to(CassandraConfigurator.class).in(Singleton.class);
     }
 }

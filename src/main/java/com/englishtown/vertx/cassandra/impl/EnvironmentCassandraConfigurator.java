@@ -44,7 +44,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     private List<String> getSeedsFromEnv(JsonArray envSeeds) {
         List<String> ips = new ArrayList<>(envSeeds.size());
 
-        for (int i=0; i < envSeeds.size(); i++) {
+        for (int i = 0; i < envSeeds.size(); i++) {
             String envValue = System.getenv(envSeeds.<String>get(i));
             if (!Strings.isNullOrEmpty(envValue)) {
                 ips.add(envValue);      // TODO: Should really perform a check to confirm that it's a valid IP Address
