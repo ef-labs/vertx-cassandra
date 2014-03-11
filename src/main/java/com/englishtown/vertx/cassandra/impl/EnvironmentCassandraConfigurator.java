@@ -1,21 +1,19 @@
 package com.englishtown.vertx.cassandra.impl;
 
 import com.google.common.base.Strings;
-import org.vertx.java.core.json.JsonArray;
+import com.google.common.collect.ImmutableList;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
  */
 public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator {
 
-    public static final String CONFIG_ENV_SEEDS = "env_seeds";
-
+    // The environment variable that contains the pipe delimited list of seeds
+    public static final String ENV_VAR_SEEDS = "CASSANDRA_SEEDS";
 
     @Inject
     public EnvironmentCassandraConfigurator(Container container) {
@@ -29,28 +27,14 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     @Override
     protected void initSeeds(JsonObject config) {
 
-        // First get the environment variables to check
-        JsonArray envSeeds = config.getArray(CONFIG_ENV_SEEDS);
+        String envVarSeeds = System.getenv(ENV_VAR_SEEDS);
 
-        // If this is missing or empty, then we call the superclass method
-        if (envSeeds == null || envSeeds.size() == 0) {
+        // If no environment variable is set up, we fall back on the JSON config
+        if (Strings.isNullOrEmpty(envVarSeeds)) {
             super.initSeeds(config);
         } else {
-            seeds = getSeedsFromEnv(envSeeds);
-            if (seeds == null || seeds.isEmpty()) super.initSeeds(config);
+            String[] seedsArray = envVarSeeds.split("\\|");
+            seeds = ImmutableList.copyOf(seedsArray);
         }
-    }
-
-    private List<String> getSeedsFromEnv(JsonArray envSeeds) {
-        List<String> ips = new ArrayList<>(envSeeds.size());
-
-        for (int i = 0; i < envSeeds.size(); i++) {
-            String envValue = System.getenv(envSeeds.<String>get(i));
-            if (!Strings.isNullOrEmpty(envValue)) {
-                ips.add(envValue);      // TODO: Should really perform a check to confirm that it's a valid IP Address
-            }
-        }
-
-        return ips;
     }
 }
