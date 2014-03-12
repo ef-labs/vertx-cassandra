@@ -67,7 +67,7 @@ class Metrics implements AutoCloseable {
 
         final Cluster cluster = session.getCluster();
 
-        registry.register(name(NAME_PREFIX, "is-closed"), new Gauge<Boolean>() {
+        registry.register(name(NAME_PREFIX, "closed"), new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
                 return cluster.isClosed();
@@ -143,13 +143,13 @@ class Metrics implements AutoCloseable {
                 if (host != null) {
                     sb.append(delimiter)
                             .append(host.toString())
-                            .append(" ")
+                            .append(" (dc=")
                             .append(host.getDatacenter())
-                            .append(" (up=")
+                            .append(" up=")
                             .append(host.isUp())
                             .append(")");
 
-                    delimiter = "|";
+                    delimiter = "\n";
                 }
             }
 
