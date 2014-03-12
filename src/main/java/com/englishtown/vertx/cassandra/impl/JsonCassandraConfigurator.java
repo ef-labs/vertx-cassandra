@@ -23,6 +23,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected LoadBalancingPolicy loadBalancingPolicy;
     protected PoolingOptions poolingOptions;
     protected ConsistencyLevel consistency;
+    protected boolean jmxReporting;
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
@@ -61,6 +62,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     @Override
+    public boolean isJmxReportingEnabled() {
+        return jmxReporting;
+    }
+
+    @Override
     public PoolingOptions getPoolingOptions() {
         return poolingOptions;
     }
@@ -71,6 +77,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         initPolicies(config);
         initPoolingOptions(config);
         consistency = getConsistency(config);
+        jmxReporting = getIsJmxReportingEnabled(config);
 
     }
 
@@ -218,4 +225,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         throw new IllegalArgumentException("'" + consistency + "' is not a valid consistency level.");
     }
 
+    protected boolean getIsJmxReportingEnabled(JsonObject config) {
+        return config.getBoolean("jmx-reporter", true);
+    }
 }

@@ -26,13 +26,24 @@ public class DefaultCassandraSession implements CassandraSession {
     protected Session session;
     protected Metadata metadata;
     protected ConsistencyLevel consistency;
+    protected Metrics metrics;
+    protected CassandraConfigurator configurator;
 
 
     @Inject
     public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, CassandraConfigurator configurator, Vertx vertx) {
         this.builderProvider = builderProvider;
+        this.configurator = configurator;
         this.vertx = vertx;
         init(configurator);
+    }
+
+    Cluster getCluster() {
+        return cluster;
+    }
+
+    CassandraConfigurator getConfigurator() {
+        return configurator;
     }
 
     protected void init(CassandraConfigurator configurator) {
@@ -60,12 +71,16 @@ public class DefaultCassandraSession implements CassandraSession {
             builder.withPoolingOptions(configurator.getPoolingOptions());
         }
 
-        // Build cluster and session
+        consistency = configurator.getConsistency();
+
+        // Build cluster and metrics
         cluster = builder.build();
+        metrics = new Metrics(this);
+
+        // Connect
         session = cluster.connect();
         metadata = cluster.getMetadata();
 
-        consistency = configurator.getConsistency();
     }
 
     @Override
@@ -131,6 +146,10 @@ public class DefaultCassandraSession implements CassandraSession {
         if (cluster != null) {
             cluster.close();
             cluster = null;
+        }
+        if (metrics != null) {
+            metrics.close();
+            metrics = null;
         }
     }
 

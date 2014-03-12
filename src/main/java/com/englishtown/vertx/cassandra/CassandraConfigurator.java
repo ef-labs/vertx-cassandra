@@ -19,4 +19,6 @@ public interface CassandraConfigurator {
 
     ConsistencyLevel getConsistency();
 
+    boolean isJmxReportingEnabled();
+
 }
