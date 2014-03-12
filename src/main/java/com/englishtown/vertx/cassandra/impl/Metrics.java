@@ -3,6 +3,7 @@ package com.englishtown.vertx.cassandra.impl;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
@@ -64,7 +65,16 @@ class Metrics implements AutoCloseable {
             }
         });
 
-        session.getCluster().register(new GaugeStateListener());
+        final Cluster cluster = session.getCluster();
+
+        registry.register(name(NAME_PREFIX, "is-closed"), new Gauge<Boolean>() {
+            @Override
+            public Boolean getValue() {
+                return cluster.isClosed();
+            }
+        });
+
+        cluster.register(new GaugeStateListener());
 
         if (configurator.isJmxReportingEnabled()) {
             reporter = JmxReporter
@@ -74,6 +84,7 @@ class Metrics implements AutoCloseable {
 
             reporter.start();
         }
+
     }
 
     @Override
