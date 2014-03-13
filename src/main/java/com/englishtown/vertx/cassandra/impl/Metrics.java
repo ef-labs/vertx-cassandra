@@ -23,8 +23,6 @@ class Metrics implements AutoCloseable {
     private MetricRegistry registry = new MetricRegistry();
     private JmxReporter reporter;
 
-    private final String NAME_PREFIX = "et.cass.session";
-
     public Metrics(DefaultCassandraSession session) {
         init(session);
     }
@@ -39,7 +37,7 @@ class Metrics implements AutoCloseable {
             for (int i = 0; i < seeds.size(); i++) {
                 final String seed = seeds.get(i);
 
-                registry.register(name(NAME_PREFIX, "initial-seed", String.valueOf(i)), new Gauge<String>() {
+                registry.register(name("initial-seed", String.valueOf(i)), new Gauge<String>() {
                     @Override
                     public String getValue() {
                         return seed;
@@ -49,7 +47,7 @@ class Metrics implements AutoCloseable {
         }
 
         final ConsistencyLevel consistency = configurator.getConsistency();
-        registry.register(name(NAME_PREFIX, "consistency"), new Gauge<String>() {
+        registry.register("consistency", new Gauge<String>() {
             @Override
             public String getValue() {
                 return (consistency == null ? null : consistency.name());
@@ -58,7 +56,7 @@ class Metrics implements AutoCloseable {
 
         // Add load balancing gauges
         final LoadBalancingPolicy lbPolicy = configurator.getLoadBalancingPolicy();
-        registry.register(name(NAME_PREFIX, "lb-policy"), new Gauge<String>() {
+        registry.register("lb-policy", new Gauge<String>() {
             @Override
             public String getValue() {
                 return (lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
@@ -67,7 +65,7 @@ class Metrics implements AutoCloseable {
 
         final Cluster cluster = session.getCluster();
 
-        registry.register(name(NAME_PREFIX, "closed"), new Gauge<Boolean>() {
+        registry.register("closed", new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
                 return cluster.isClosed();
@@ -77,9 +75,10 @@ class Metrics implements AutoCloseable {
         cluster.register(new GaugeStateListener());
 
         if (configurator.isJmxReportingEnabled()) {
+            String domain = "et.cass." + cluster.getClusterName() + "-metrics";
             reporter = JmxReporter
                     .forRegistry(registry)
-                    .inDomain(NAME_PREFIX)
+                    .inDomain(domain)
                     .build();
 
             reporter.start();
@@ -103,28 +102,28 @@ class Metrics implements AutoCloseable {
 
         public GaugeStateListener() {
 
-            registry.register(name(NAME_PREFIX, "added-hosts"), new Gauge<String>() {
+            registry.register("added-hosts", new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(addedHosts);
                 }
             });
 
-            registry.register(name(NAME_PREFIX, "up-hosts"), new Gauge<String>() {
+            registry.register("up-hosts", new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(upHosts);
                 }
             });
 
-            registry.register(name(NAME_PREFIX, "down-hosts"), new Gauge<String>() {
+            registry.register("down-hosts", new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(downHosts);
                 }
             });
 
-            registry.register(name(NAME_PREFIX, "removed-hosts"), new Gauge<String>() {
+            registry.register("removed-hosts", new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(removedHosts);
