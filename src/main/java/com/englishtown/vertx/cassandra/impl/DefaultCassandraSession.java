@@ -71,6 +71,11 @@ public class DefaultCassandraSession implements CassandraSession {
             builder.withPoolingOptions(configurator.getPoolingOptions());
         }
 
+        // Add socket options to cluster builder
+        if (configurator.getSocketOptions() != null) {
+            builder.withSocketOptions(configurator.getSocketOptions());
+        }
+
         consistency = configurator.getConsistency();
 
         // Build cluster and metrics

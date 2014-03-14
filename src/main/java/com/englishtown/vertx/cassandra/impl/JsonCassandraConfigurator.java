@@ -3,6 +3,7 @@ package com.englishtown.vertx.cassandra.impl;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
@@ -22,6 +23,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected List<String> seeds;
     protected LoadBalancingPolicy loadBalancingPolicy;
     protected PoolingOptions poolingOptions;
+    protected SocketOptions socketOptions;
     protected ConsistencyLevel consistency;
     protected boolean jmxReporting;
 
@@ -71,11 +73,17 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         return poolingOptions;
     }
 
+    @Override
+    public SocketOptions getSocketOptions() {
+        return socketOptions;
+    }
+
     protected void init(JsonObject config) {
 
         initSeeds(config);
         initPolicies(config);
         initPoolingOptions(config);
+        initSocketOptions(config);
         consistency = getConsistency(config);
         jmxReporting = getIsJmxReportingEnabled(config);
 
@@ -144,7 +152,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
     }
 
-    public void initPoolingOptions(JsonObject config) {
+    protected void initPoolingOptions(JsonObject config) {
 
         JsonObject poolingConfig = config.getObject("pooling");
 
@@ -186,6 +194,36 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
         if (max_simultaneous_requests_remote != null) {
             poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote);
+        }
+
+    }
+
+    protected void initSocketOptions(JsonObject config) {
+
+        JsonObject socketConfig = config.getObject("socket");
+
+        if (socketConfig == null) {
+            return;
+        }
+
+        socketOptions = new SocketOptions();
+
+        Integer connect_timeout_millis = socketConfig.getInteger("connect_timeout_millis");
+        Integer read_timeout_millis = socketConfig.getInteger("read_timeout_millis");
+        Boolean keep_alive = socketConfig.getBoolean("keep_alive");
+        Boolean reuse_address = socketConfig.getBoolean("reuse_address");
+
+        if (connect_timeout_millis != null) {
+            socketOptions.setConnectTimeoutMillis(connect_timeout_millis);
+        }
+        if (read_timeout_millis != null) {
+            socketOptions.setReadTimeoutMillis(read_timeout_millis);
+        }
+        if (keep_alive != null) {
+            socketOptions.setKeepAlive(keep_alive);
+        }
+        if (reuse_address != null) {
+            socketOptions.setReuseAddress(reuse_address);
         }
 
     }

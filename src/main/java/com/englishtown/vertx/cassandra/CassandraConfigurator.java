@@ -2,6 +2,7 @@ package com.englishtown.vertx.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 
 import java.util.List;
@@ -16,6 +17,8 @@ public interface CassandraConfigurator {
     LoadBalancingPolicy getLoadBalancingPolicy();
 
     PoolingOptions getPoolingOptions();
+
+    SocketOptions getSocketOptions();
 
     ConsistencyLevel getConsistency();
 
