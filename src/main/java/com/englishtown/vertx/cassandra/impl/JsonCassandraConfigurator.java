@@ -36,6 +36,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONSISTENCY_THREE = "THREE";
     public static final String CONSISTENCY_QUORUM = "QUORUM";
     public static final String CONSISTENCY_ALL = "ALL";
+    public static final String CONSISTENCY_LOCAL_ONE = "LOCAL_ONE";
     public static final String CONSISTENCY_LOCAL_QUORUM = "LOCAL_QUORUM";
     public static final String CONSISTENCY_EACH_QUORUM = "EACH_QUORUM";
 
@@ -252,6 +253,9 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
         if (consistency.equalsIgnoreCase(CONSISTENCY_ALL)) {
             return ConsistencyLevel.ALL;
+        }
+        if (consistency.equalsIgnoreCase(CONSISTENCY_LOCAL_ONE)) {
+            return ConsistencyLevel.LOCAL_ONE;
         }
         if (consistency.equalsIgnoreCase(CONSISTENCY_LOCAL_QUORUM)) {
             return ConsistencyLevel.LOCAL_QUORUM;
