@@ -85,4 +85,12 @@ public interface CassandraSession extends AutoCloseable {
      */
     Metadata getMetadata();
 
+    /**
+     * Whether this Session instance has been closed.
+     *
+     * @return {@code true} if this Session instance has been closed, {@code false}
+     * otherwise.
+     */
+    boolean isClosed();
+
 }

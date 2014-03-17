@@ -24,7 +24,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     protected Cluster cluster;
     protected Session session;
-    protected Metadata metadata;
     protected ConsistencyLevel consistency;
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
@@ -84,7 +83,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
         // Connect
         session = cluster.connect();
-        metadata = cluster.getMetadata();
 
     }
 
@@ -139,7 +137,12 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public Metadata getMetadata() {
-        return metadata;
+        return cluster.getMetadata();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return (session == null ? true : session.isClosed());
     }
 
     @Override

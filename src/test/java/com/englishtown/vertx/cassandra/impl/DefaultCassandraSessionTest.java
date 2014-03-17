@@ -144,7 +144,16 @@ public class DefaultCassandraSessionTest {
         verify(clusterBuilder).withPoolingOptions(eq(options));
         verify(clusterBuilder, times(2)).build();
         verify(cluster, times(2)).connect();
-        verify(cluster, times(2)).getMetadata();
+
+        verify(cluster, times(0)).getMetadata();
+        cassandraSession.getMetadata();
+        verify(cluster, times(1)).getMetadata();
+
+        verify(cluster, times(0)).isClosed();
+        verify(session, times(0)).isClosed();
+        cassandraSession.isClosed();
+        verify(cluster, times(0)).isClosed();
+        verify(session, times(1)).isClosed();
 
         seeds.clear();
         try {

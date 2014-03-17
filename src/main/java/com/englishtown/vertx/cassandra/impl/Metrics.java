@@ -25,7 +25,7 @@ class Metrics implements AutoCloseable {
         init(session);
     }
 
-    protected void init(DefaultCassandraSession session) {
+    protected void init(final DefaultCassandraSession session) {
 
         CassandraConfigurator configurator = session.getConfigurator();
 
@@ -37,14 +37,14 @@ class Metrics implements AutoCloseable {
             }
         });
 
-        final Cluster cluster = session.getCluster();
-
         registry.register("closed", new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
-                return cluster.isClosed();
+                return session.isClosed();
             }
         });
+
+        final Cluster cluster = session.getCluster();
 
         cluster.register(new GaugeStateListener());
 
