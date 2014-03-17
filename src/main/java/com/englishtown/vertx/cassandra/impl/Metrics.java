@@ -110,7 +110,6 @@ class Metrics implements AutoCloseable {
             socket.putNumber("so_linger", socketOptions.getSoLinger());
             socket.putBoolean("keep_alive", socketOptions.getKeepAlive());
             socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
-            socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
             socket.putBoolean("tcp_no_delay", socketOptions.getTcpNoDelay());
         }
 

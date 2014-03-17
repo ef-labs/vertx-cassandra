@@ -165,6 +165,38 @@ public class JsonCassandraConfiguratorTest {
     }
 
     @Test
+    public void testGetSocketOptions() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getSocketOptions());
+
+        config.putObject("socket", new JsonObject()
+                .putNumber("connect_timeout_millis", 32000)
+                .putNumber("read_timeout_millis", 33000)
+                .putBoolean("keep_alive", true)
+                .putBoolean("reuse_address", true)
+                .putNumber("receive_buffer_size", 1024)
+                .putNumber("send_buffer_size", 2048)
+                .putNumber("so_linger", 10)
+                .putBoolean("tcp_no_delay", false)
+        );
+
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getSocketOptions());
+
+        SocketOptions options = configurator.getSocketOptions();
+        assertEquals(32000, options.getConnectTimeoutMillis());
+        assertEquals(33000, options.getReadTimeoutMillis());
+        assertEquals(true, options.getKeepAlive());
+        assertEquals(true, options.getReuseAddress());
+        assertEquals(1024, options.getReceiveBufferSize().intValue());
+        assertEquals(2048, options.getSendBufferSize().intValue());
+        assertEquals(10, options.getSoLinger().intValue());
+        assertEquals(false, options.getTcpNoDelay());
+
+    }
+
+    @Test
     public void testGetConsistency() throws Exception {
 
         JsonCassandraConfigurator configurator;
@@ -196,6 +228,12 @@ public class JsonCassandraConfiguratorTest {
 
         consistency = configurator.getConsistency();
         assertEquals(ConsistencyLevel.EACH_QUORUM, consistency);
+
+        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
+        configurator = new JsonCassandraConfigurator(container);
+
+        consistency = configurator.getConsistency();
+        assertEquals(ConsistencyLevel.LOCAL_ONE, consistency);
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
         configurator = new JsonCassandraConfigurator(container);

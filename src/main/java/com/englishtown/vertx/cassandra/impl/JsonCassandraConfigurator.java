@@ -20,6 +20,8 @@ import java.util.List;
  */
 public class JsonCassandraConfigurator implements CassandraConfigurator {
 
+    protected final Container container;
+
     protected List<String> seeds;
     protected LoadBalancingPolicy loadBalancingPolicy;
     protected PoolingOptions poolingOptions;
@@ -42,10 +44,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     @Inject
     public JsonCassandraConfigurator(Container container) {
-        this(container.config().getObject("cassandra", new JsonObject()));
+        this(container.config().getObject("cassandra", new JsonObject()), container);
     }
 
-    public JsonCassandraConfigurator(JsonObject config) {
+    public JsonCassandraConfigurator(JsonObject config, Container container) {
+        this.container  = container;
         init(config);
     }
 
@@ -213,6 +216,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         Integer read_timeout_millis = socketConfig.getInteger("read_timeout_millis");
         Boolean keep_alive = socketConfig.getBoolean("keep_alive");
         Boolean reuse_address = socketConfig.getBoolean("reuse_address");
+        Integer receive_buffer_size = socketConfig.getInteger("receive_buffer_size");
+        Integer send_buffer_size = socketConfig.getInteger("send_buffer_size");
+        Integer so_linger = socketConfig.getInteger("so_linger");
+        Boolean tcp_no_delay = socketConfig.getBoolean("tcp_no_delay");
 
         if (connect_timeout_millis != null) {
             socketOptions.setConnectTimeoutMillis(connect_timeout_millis);
@@ -225,6 +232,18 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
         if (reuse_address != null) {
             socketOptions.setReuseAddress(reuse_address);
+        }
+        if (receive_buffer_size != null) {
+            socketOptions.setReceiveBufferSize(receive_buffer_size);
+        }
+        if (send_buffer_size != null) {
+            socketOptions.setSendBufferSize(send_buffer_size);
+        }
+        if (so_linger != null) {
+            socketOptions.setSoLinger(so_linger);
+        }
+        if (tcp_no_delay != null) {
+            socketOptions.setTcpNoDelay(tcp_no_delay);
         }
 
     }
