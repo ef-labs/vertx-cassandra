@@ -3,17 +3,15 @@ package com.englishtown.vertx.cassandra.impl;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Host;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonObject;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.codahale.metrics.MetricRegistry.name;
 
 /**
  * Metrics container
@@ -31,35 +29,11 @@ class Metrics implements AutoCloseable {
 
         CassandraConfigurator configurator = session.getConfigurator();
 
-        // Add seed gauges
-        List<String> seeds = configurator.getSeeds();
-        if (seeds != null) {
-            for (int i = 0; i < seeds.size(); i++) {
-                final String seed = seeds.get(i);
-
-                registry.register(name("initial-seed", String.valueOf(i)), new Gauge<String>() {
-                    @Override
-                    public String getValue() {
-                        return seed;
-                    }
-                });
-            }
-        }
-
-        final ConsistencyLevel consistency = configurator.getConsistency();
-        registry.register("consistency", new Gauge<String>() {
+        final String config = getConfiguration(configurator).encodePrettily();
+        registry.register("config", new Gauge<String>() {
             @Override
             public String getValue() {
-                return (consistency == null ? null : consistency.name());
-            }
-        });
-
-        // Add load balancing gauges
-        final LoadBalancingPolicy lbPolicy = configurator.getLoadBalancingPolicy();
-        registry.register("lb-policy", new Gauge<String>() {
-            @Override
-            public String getValue() {
-                return (lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
+                return config;
             }
         });
 
@@ -84,6 +58,63 @@ class Metrics implements AutoCloseable {
             reporter.start();
         }
 
+    }
+
+    private JsonObject getConfiguration(CassandraConfigurator configurator) {
+
+        JsonObject json = new JsonObject();
+
+        if (configurator == null) {
+            return json;
+        }
+
+        // Add seeds
+        List<String> seeds = configurator.getSeeds();
+        JsonArray arr = new JsonArray();
+        json.putArray("seeds", arr);
+        if (seeds != null) {
+            for (String seed : seeds) {
+                arr.addString(seed);
+            }
+        }
+
+        ConsistencyLevel consistency = configurator.getConsistency();
+        json.putString("consistency", consistency == null ? null : consistency.name());
+
+        LoadBalancingPolicy lbPolicy = configurator.getLoadBalancingPolicy();
+        json.putString("lb-policy", lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
+
+        PoolingOptions poolingOptions = configurator.getPoolingOptions();
+        JsonObject pooling = new JsonObject();
+        json.putObject("pooling", pooling);
+        if (poolingOptions != null) {
+            pooling.putNumber("core_connections_per_host_local", poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL));
+            pooling.putNumber("core_connections_per_host_remote", poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE));
+            pooling.putNumber("max_connections_per_host_local", poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL));
+            pooling.putNumber("max_connections_per_host_remote", poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE));
+
+            pooling.putNumber("min_simultaneous_requests_local", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+            pooling.putNumber("min_simultaneous_requests_remote", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+            pooling.putNumber("max_simultaneous_requests_local", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+            pooling.putNumber("max_simultaneous_requests_remote", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+        }
+
+        SocketOptions socketOptions = configurator.getSocketOptions();
+        JsonObject socket = new JsonObject();
+        json.putObject("socket", socket);
+        if (socketOptions != null) {
+            socket.putNumber("connect_timeout_millis", socketOptions.getConnectTimeoutMillis());
+            socket.putNumber("read_timeout_millis", socketOptions.getReadTimeoutMillis());
+            socket.putNumber("receive_buffer_size", socketOptions.getReceiveBufferSize());
+            socket.putNumber("send_buffer_size", socketOptions.getSendBufferSize());
+            socket.putNumber("so_linger", socketOptions.getSoLinger());
+            socket.putBoolean("keep_alive", socketOptions.getKeepAlive());
+            socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
+            socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
+            socket.putBoolean("tcp_no_delay", socketOptions.getTcpNoDelay());
+        }
+
+        return json;
     }
 
     @Override
