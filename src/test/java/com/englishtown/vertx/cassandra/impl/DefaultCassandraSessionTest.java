@@ -38,6 +38,7 @@ public class DefaultCassandraSessionTest {
 
     DefaultCassandraSession cassandraSession;
     List<String> seeds = new ArrayList<>();
+    Configuration configuration = new Configuration();
 
     @Mock
     Vertx vertx;
@@ -104,6 +105,7 @@ public class DefaultCassandraSessionTest {
         when(vertx.currentContext()).thenReturn(context).thenReturn(null);
 
         when(clusterBuilder.build()).thenReturn(cluster);
+        when(cluster.getConfiguration()).thenReturn(configuration);
         when(cluster.connect()).thenReturn(session);
         when(cluster.getMetadata()).thenReturn(metadata);
 
@@ -114,7 +116,6 @@ public class DefaultCassandraSessionTest {
             }
         };
 
-        when(configurator.getConsistency()).thenReturn(LOCAL_QUORUM);
         when(configurator.getSeeds()).thenReturn(seeds);
         seeds.add("127.0.0.1");
 
@@ -135,13 +136,19 @@ public class DefaultCassandraSessionTest {
 
         LoadBalancingPolicy lbPolicy = mock(LoadBalancingPolicy.class);
         when(configurator.getLoadBalancingPolicy()).thenReturn(lbPolicy);
-        PoolingOptions options = mock(PoolingOptions.class);
-        when(configurator.getPoolingOptions()).thenReturn(options);
+        PoolingOptions poolingOptions = mock(PoolingOptions.class);
+        when(configurator.getPoolingOptions()).thenReturn(poolingOptions);
+        SocketOptions socketOptions = mock(SocketOptions.class);
+        when(configurator.getSocketOptions()).thenReturn(socketOptions);
+        QueryOptions queryOptions = mock(QueryOptions.class);
+        when(configurator.getQueryOptions()).thenReturn(queryOptions);
+        MetricsOptions metricsOptions = mock(MetricsOptions.class);
+        when(configurator.getMetricsOptions()).thenReturn(metricsOptions);
 
         cassandraSession.init(configurator);
         verify(clusterBuilder, times(4)).addContactPoint(anyString());
         verify(clusterBuilder).withLoadBalancingPolicy(eq(lbPolicy));
-        verify(clusterBuilder).withPoolingOptions(eq(options));
+        verify(clusterBuilder).withPoolingOptions(eq(poolingOptions));
         verify(clusterBuilder, times(2)).build();
         verify(cluster, times(2)).connect();
 

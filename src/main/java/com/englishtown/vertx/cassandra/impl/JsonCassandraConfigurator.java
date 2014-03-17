@@ -1,9 +1,6 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.SocketOptions;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
@@ -26,8 +23,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected LoadBalancingPolicy loadBalancingPolicy;
     protected PoolingOptions poolingOptions;
     protected SocketOptions socketOptions;
-    protected ConsistencyLevel consistency;
-    protected boolean jmxReporting;
+    protected QueryOptions queryOptions;
+    protected MetricsOptions metricsOptions;
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
@@ -63,13 +60,13 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     @Override
-    public ConsistencyLevel getConsistency() {
-        return consistency;
+    public QueryOptions getQueryOptions() {
+        return queryOptions;
     }
 
     @Override
-    public boolean isJmxReportingEnabled() {
-        return jmxReporting;
+    public MetricsOptions getMetricsOptions() {
+        return metricsOptions;
     }
 
     @Override
@@ -88,8 +85,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         initPolicies(config);
         initPoolingOptions(config);
         initSocketOptions(config);
-        consistency = getConsistency(config);
-        jmxReporting = getIsJmxReportingEnabled(config);
+        initQueryOptions(config);
+        initMetricsOptions(config);
 
     }
 
@@ -248,6 +245,18 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
+    protected void initQueryOptions(JsonObject config) {
+
+        ConsistencyLevel consistency = getConsistency(config);
+
+        if (consistency == null) {
+            return;
+        }
+
+        queryOptions = new QueryOptions().setConsistencyLevel(consistency);
+
+    }
+
     protected ConsistencyLevel getConsistency(JsonObject config) {
         String consistency = config.getString(CONFIG_CONSISTENCY_LEVEL);
 
@@ -286,7 +295,17 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         throw new IllegalArgumentException("'" + consistency + "' is not a valid consistency level.");
     }
 
-    protected boolean getIsJmxReportingEnabled(JsonObject config) {
-        return config.getBoolean("jmx-reporter", true);
+    protected void initMetricsOptions(JsonObject config) {
+
+        JsonObject metrics = config.getObject("metrics");
+
+        if (metrics == null) {
+            return;
+        }
+
+        boolean jmx_enabled = metrics.getBoolean("jmx_enabled", true);
+        metricsOptions = new MetricsOptions(jmx_enabled);
+
     }
+
 }

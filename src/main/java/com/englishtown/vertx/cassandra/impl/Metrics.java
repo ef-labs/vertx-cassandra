@@ -5,6 +5,9 @@ import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.Policies;
+import com.datastax.driver.core.policies.ReconnectionPolicy;
+import com.datastax.driver.core.policies.RetryPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -27,9 +30,10 @@ class Metrics implements AutoCloseable {
 
     protected void init(final DefaultCassandraSession session) {
 
-        CassandraConfigurator configurator = session.getConfigurator();
+        final Cluster cluster = session.getCluster();
+        Configuration configuration = cluster.getConfiguration();
 
-        final String config = getConfiguration(configurator).encodePrettily();
+        final String config = getConfiguration(session.getConfigurator(), configuration).encodePrettily();
         registry.register("config", new Gauge<String>() {
             @Override
             public String getValue() {
@@ -44,11 +48,9 @@ class Metrics implements AutoCloseable {
             }
         });
 
-        final Cluster cluster = session.getCluster();
-
         cluster.register(new GaugeStateListener());
 
-        if (configurator.isJmxReportingEnabled()) {
+        if (configuration.getMetricsOptions().isJMXReportingEnabled()) {
             String domain = "et.cass." + cluster.getClusterName() + "-metrics";
             reporter = JmxReporter
                     .forRegistry(registry)
@@ -60,13 +62,9 @@ class Metrics implements AutoCloseable {
 
     }
 
-    private JsonObject getConfiguration(CassandraConfigurator configurator) {
+    private JsonObject getConfiguration(CassandraConfigurator configurator, Configuration configuration) {
 
         JsonObject json = new JsonObject();
-
-        if (configurator == null) {
-            return json;
-        }
 
         // Add seeds
         List<String> seeds = configurator.getSeeds();
@@ -78,15 +76,23 @@ class Metrics implements AutoCloseable {
             }
         }
 
-        ConsistencyLevel consistency = configurator.getConsistency();
-        json.putString("consistency", consistency == null ? null : consistency.name());
+        Policies policies = configuration.getPolicies();
+        JsonObject policiesJson = new JsonObject();
+        json.putObject("policies", policiesJson);
 
-        LoadBalancingPolicy lbPolicy = configurator.getLoadBalancingPolicy();
-        json.putString("lb-policy", lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
+        if (policies != null) {
+            LoadBalancingPolicy lbPolicy = policies.getLoadBalancingPolicy();
+            policiesJson.putString("load_balancing", lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
+            ReconnectionPolicy reconnectionPolicy = policies.getReconnectionPolicy();
+            policiesJson.putString("reconnection", reconnectionPolicy == null ? null : reconnectionPolicy.getClass().getSimpleName());
+            RetryPolicy retryPolicy = policies.getRetryPolicy();
+            policiesJson.putString("retry", retryPolicy == null ? null : retryPolicy.getClass().getSimpleName());
+        }
 
-        PoolingOptions poolingOptions = configurator.getPoolingOptions();
+        PoolingOptions poolingOptions = configuration.getPoolingOptions();
         JsonObject pooling = new JsonObject();
         json.putObject("pooling", pooling);
+
         if (poolingOptions != null) {
             pooling.putNumber("core_connections_per_host_local", poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL));
             pooling.putNumber("core_connections_per_host_remote", poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE));
@@ -99,9 +105,10 @@ class Metrics implements AutoCloseable {
             pooling.putNumber("max_simultaneous_requests_remote", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
         }
 
-        SocketOptions socketOptions = configurator.getSocketOptions();
+        SocketOptions socketOptions = configuration.getSocketOptions();
         JsonObject socket = new JsonObject();
         json.putObject("socket", socket);
+
         if (socketOptions != null) {
             socket.putNumber("connect_timeout_millis", socketOptions.getConnectTimeoutMillis());
             socket.putNumber("read_timeout_millis", socketOptions.getReadTimeoutMillis());
@@ -111,6 +118,18 @@ class Metrics implements AutoCloseable {
             socket.putBoolean("keep_alive", socketOptions.getKeepAlive());
             socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
             socket.putBoolean("tcp_no_delay", socketOptions.getTcpNoDelay());
+        }
+
+        QueryOptions queryOptions = configuration.getQueryOptions();
+        JsonObject query = new JsonObject();
+        json.putObject("query", query);
+
+        if (queryOptions != null) {
+            ConsistencyLevel consistency = queryOptions.getConsistencyLevel();
+            query.putString("consistency", consistency == null ? null : consistency.name());
+            consistency = queryOptions.getSerialConsistencyLevel();
+            query.putString("serial_consistency", consistency == null ? null : consistency.name());
+            query.putNumber("fetch_size", queryOptions.getFetchSize());
         }
 
         return json;

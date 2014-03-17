@@ -24,7 +24,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     protected Cluster cluster;
     protected Session session;
-    protected ConsistencyLevel consistency;
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
 
@@ -75,7 +74,15 @@ public class DefaultCassandraSession implements CassandraSession {
             builder.withSocketOptions(configurator.getSocketOptions());
         }
 
-        consistency = configurator.getConsistency();
+        if (configurator.getQueryOptions() != null) {
+            builder.withQueryOptions(configurator.getQueryOptions());
+        }
+
+        if (configurator.getMetricsOptions() != null) {
+            if (!configurator.getMetricsOptions().isJMXReportingEnabled()) {
+                builder.withoutJMXReporting();
+            }
+        }
 
         // Build cluster and metrics
         cluster = builder.build();
@@ -88,9 +95,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        if (consistency != null && statement.getConsistencyLevel() == null) {
-            statement.setConsistencyLevel(consistency);
-        }
         final ResultSetFuture future = session.executeAsync(statement);
         Futures.addCallback(future, wrapCallback(callback));
     }
@@ -102,9 +106,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public ResultSet execute(Statement statement) {
-        if (consistency != null && statement.getConsistencyLevel() == null) {
-            statement.setConsistencyLevel(consistency);
-        }
         return session.execute(statement);
     }
 

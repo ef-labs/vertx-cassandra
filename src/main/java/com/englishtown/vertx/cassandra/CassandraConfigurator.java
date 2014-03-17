@@ -1,8 +1,6 @@
 package com.englishtown.vertx.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.SocketOptions;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 
 import java.util.List;
@@ -20,8 +18,8 @@ public interface CassandraConfigurator {
 
     SocketOptions getSocketOptions();
 
-    ConsistencyLevel getConsistency();
+    QueryOptions getQueryOptions();
 
-    boolean isJmxReportingEnabled();
+    MetricsOptions getMetricsOptions();
 
 }
