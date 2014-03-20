@@ -17,6 +17,7 @@
         <cassandra.driver.version>2.0.1</cassandra.driver.version>
         <vertx.mod.hk2.version>1.6.0-SNAPSHOT</vertx.mod.hk2.version>
         <mockito.version>1.9.5</mockito.version>
+        <when.version>2.0.0-SNAPSHOT</when.version>
     </properties>
 
     <dependencies>
@@ -31,6 +32,12 @@
             <groupId>com.englishtown</groupId>
             <artifactId>vertx-mod-hk2</artifactId>
             <version>${vertx.mod.hk2.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.englishtown</groupId>
+            <artifactId>when.java</artifactId>
+            <version>${when.version}</version>
             <scope>provided</scope>
         </dependency>
 
