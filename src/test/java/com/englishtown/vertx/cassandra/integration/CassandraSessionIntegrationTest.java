@@ -14,6 +14,8 @@ import org.vertx.testtools.TestVerticle;
 import org.vertx.testtools.VertxAssert;
 
 import javax.inject.Provider;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Integration test for {@link com.englishtown.vertx.cassandra.CassandraSession}
@@ -22,20 +24,22 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
     CassandraSession session;
 
-    private static final String TEST_KEYSPACE = "et_vertx_mod_cassandra_integration_test";
-    private static final String CQL_CREATE_KEYSPACE = "CREATE KEYSPACE et_vertx_mod_cassandra_integration_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
+    private static final String TEST_KEYSPACE_BASE = "test_vertx_mod_cass_";
+    private static final String CL_CREATE_KEYSPACE = "CREATE KEYSPACE et_vertx_mod_cassandra_integration_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
+    private String keyspace;
+    private String createKeyspaceCommand;
 
     @Test
     public void testExecute() throws Exception {
 
-        ResultSet rs = session.execute(CQL_CREATE_KEYSPACE);
+        ResultSet rs = session.execute(createKeyspaceCommand);
         VertxAssert.assertNotNull(rs);
 
-        session.execute("CREATE TABLE " + TEST_KEYSPACE + ".test (id text PRIMARY KEY, value text)");
+        session.execute("CREATE TABLE " + keyspace + ".test (id text PRIMARY KEY, value text)");
 
         RegularStatement statement = QueryBuilder
                 .select()
-                .from(TEST_KEYSPACE, "test")
+                .from(keyspace, "test")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
 
         PreparedStatement prepared = session.prepare(statement);
@@ -44,6 +48,7 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         rs = session.execute(bound);
         VertxAssert.assertNotNull(rs);
 
+        session.execute("DROP KEYSPACE IF EXISTS " + keyspace + ";");
         VertxAssert.testComplete();
     }
 
@@ -52,17 +57,19 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
         final Context context = vertx.currentContext();
 
-        session.executeAsync(CQL_CREATE_KEYSPACE, new FutureCallback<ResultSet>() {
+        session.executeAsync(createKeyspaceCommand, new FutureCallback<ResultSet>() {
             @Override
             public void onSuccess(ResultSet result) {
                 // Make sure we're on the right context
                 VertxAssert.assertEquals(context, vertx.currentContext());
                 VertxAssert.assertNotNull(result);
+                session.execute("DROP KEYSPACE IF EXISTS " + keyspace + ";");
                 VertxAssert.testComplete();
             }
 
             @Override
             public void onFailure(Throwable t) {
+                session.execute("DROP KEYSPACE IF EXISTS " + keyspace + ";");
                 VertxAssert.handleThrowable(t);
             }
         });
@@ -71,6 +78,10 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
     @Override
     public void start(Future<Void> startedResult) {
+
+        String dateTime = new SimpleDateFormat("yyMMddHHmmss").format(new Date());
+        keyspace = TEST_KEYSPACE_BASE + dateTime;
+        createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
 
         final Cluster.Builder builder = new Cluster.Builder();
         Provider<Cluster.Builder> builderProvider = new Provider<Cluster.Builder>() {
@@ -84,8 +95,8 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         session = new DefaultCassandraSession(builderProvider, configurator, vertx);
 
         Metadata metadata = session.getMetadata();
-        if (metadata.getKeyspace(TEST_KEYSPACE) != null) {
-            session.execute("DROP KEYSPACE " + TEST_KEYSPACE + ";");
+        if (metadata.getKeyspace(keyspace) != null) {
+            session.execute("DROP KEYSPACE IF EXISTS " + keyspace + ";");
         }
 
         startedResult.setResult(null);
