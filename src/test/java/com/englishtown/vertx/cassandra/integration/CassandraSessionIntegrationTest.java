@@ -5,7 +5,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
-import com.englishtown.vertx.cassandra.impl.JsonCassandraConfigurator;
+import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Test;
 import org.vertx.java.core.Context;
@@ -80,7 +80,7 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
             }
         };
 
-        CassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(container);
         session = new DefaultCassandraSession(builderProvider, configurator, vertx);
 
         Metadata metadata = session.getMetadata();
