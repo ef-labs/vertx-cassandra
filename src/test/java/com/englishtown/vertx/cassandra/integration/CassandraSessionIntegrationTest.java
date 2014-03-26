@@ -6,10 +6,12 @@ import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Test;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 import org.vertx.testtools.VertxAssert;
 
@@ -25,7 +27,6 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
     CassandraSession session;
 
     private static final String TEST_KEYSPACE_BASE = "test_vertx_mod_cass_";
-    private static final String CL_CREATE_KEYSPACE = "CREATE KEYSPACE et_vertx_mod_cassandra_integration_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
     private String keyspace;
     private String createKeyspaceCommand;
 
@@ -91,7 +92,7 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
             }
         };
 
-        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(container);
+        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(buildConfigFromEnvVars(), container);
         session = new DefaultCassandraSession(builderProvider, configurator, vertx);
 
         Metadata metadata = session.getMetadata();
@@ -114,5 +115,30 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private JsonObject buildConfigFromEnvVars() {
+
+        JsonObject cassConfig = new JsonObject();
+
+        // Grab load balancing policy & consistency level
+        String loadBalancingNameEnv = container.env().get("CASSANDRA_POLICIES_LOADBALANCING_NAME");
+        String loadBalancingLocalDCEnv = container.env().get("CASSANDRA_POLICIES_LOCAL_DC");
+
+        if (!Strings.isNullOrEmpty(loadBalancingNameEnv) && !Strings.isNullOrEmpty(loadBalancingLocalDCEnv)) {
+            JsonObject loadBalancing = new JsonObject().putString("name", loadBalancingNameEnv).putString("local_dc", loadBalancingLocalDCEnv);
+            JsonObject policies = new JsonObject().putObject("load_balancing", loadBalancing);
+
+            cassConfig.putObject("policies", policies);
+        }
+
+        // And the consistency level
+        String consistencyLevelEnv = container.env().get("CASSANDRA_CONSISTENCY_LEVEL");
+
+        if (!Strings.isNullOrEmpty(consistencyLevelEnv)) {
+            cassConfig.putString("consistency_level", consistencyLevelEnv);
+        }
+
+        return cassConfig;
     }
 }
