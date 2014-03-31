@@ -1,5 +1,7 @@
 package com.englishtown.vertx.cassandra.impl;
 
+import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +16,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,6 +62,16 @@ public class EnvironmentCassandraConfiguratorTest {
         assertEquals("127.0.0.2", seeds.get(0));
         assertEquals("127.0.0.3", seeds.get(1));
         assertEquals("127.0.0.4", seeds.get(2));
+    }
 
+    @Test
+    public void testInitPolicies() throws Exception {
+
+        env.put(EnvironmentCassandraConfigurator.ENV_VAR_LOCAL_DC, "LOCAL1");
+
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        LoadBalancingPolicy loadBalancingPolicy = configurator.getLoadBalancingPolicy();
+
+        assertTrue(loadBalancingPolicy instanceof DCAwareRoundRobinPolicy);
     }
 }
