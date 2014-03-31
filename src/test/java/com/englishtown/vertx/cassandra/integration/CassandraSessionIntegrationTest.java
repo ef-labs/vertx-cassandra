@@ -6,7 +6,9 @@ import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
+import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.google.common.io.Resources;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Test;
 import org.vertx.java.core.Context;
@@ -26,6 +28,7 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
     CassandraSession session;
 
+    private static final String TEST_CONFIG_FILE = "test_config.json";
     private static final String TEST_KEYSPACE_BASE = "test_vertx_mod_cass_";
     private String keyspace;
     private String createKeyspaceCommand;
@@ -80,9 +83,18 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
     @Override
     public void start(Future<Void> startedResult) {
 
+        // Load the test config file, if we have one
+        JsonObject config = loadConfig();
+
         String dateTime = new SimpleDateFormat("yyMMddHHmmss").format(new Date());
         keyspace = TEST_KEYSPACE_BASE + dateTime;
-        createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
+
+        String envVarLocalDc = container.env().get(EnvironmentCassandraConfigurator.ENV_VAR_LOCAL_DC);
+        if (Strings.isNullOrEmpty(envVarLocalDc)) {
+            createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
+        } else {
+            createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', '" + envVarLocalDc + "' : 1 };";
+        }
 
         final Cluster.Builder builder = new Cluster.Builder();
         Provider<Cluster.Builder> builderProvider = new Provider<Cluster.Builder>() {
@@ -92,7 +104,7 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
             }
         };
 
-        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(buildConfigFromEnvVars(), container);
+        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
         session = new DefaultCassandraSession(builderProvider, configurator, vertx);
 
         Metadata metadata = session.getMetadata();
@@ -102,6 +114,15 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
 
         startedResult.setResult(null);
         start();
+    }
+
+    private JsonObject loadConfig() {
+
+        try {
+            return new JsonObject(Resources.toString(Resources.getResource(TEST_CONFIG_FILE), Charsets.UTF_8));
+        } catch (Exception e) {
+            return new JsonObject();
+        }
     }
 
     /**
@@ -115,30 +136,5 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private JsonObject buildConfigFromEnvVars() {
-
-        JsonObject cassConfig = new JsonObject();
-
-        // Grab load balancing policy & consistency level
-        String loadBalancingNameEnv = container.env().get("CASSANDRA_POLICIES_LOADBALANCING_NAME");
-        String loadBalancingLocalDCEnv = container.env().get("CASSANDRA_POLICIES_LOCAL_DC");
-
-        if (!Strings.isNullOrEmpty(loadBalancingNameEnv) && !Strings.isNullOrEmpty(loadBalancingLocalDCEnv)) {
-            JsonObject loadBalancing = new JsonObject().putString("name", loadBalancingNameEnv).putString("local_dc", loadBalancingLocalDCEnv);
-            JsonObject policies = new JsonObject().putObject("load_balancing", loadBalancing);
-
-            cassConfig.putObject("policies", policies);
-        }
-
-        // And the consistency level
-        String consistencyLevelEnv = container.env().get("CASSANDRA_CONSISTENCY_LEVEL");
-
-        if (!Strings.isNullOrEmpty(consistencyLevelEnv)) {
-            cassConfig.putString("consistency_level", consistencyLevelEnv);
-        }
-
-        return cassConfig;
     }
 }

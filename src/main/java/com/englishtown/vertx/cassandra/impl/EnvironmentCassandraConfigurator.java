@@ -58,11 +58,18 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
             logger.debug("Using environment config for Local DC of ", envVarLocalDC);
 
             // We take the current config, remove any local dc configuration and replace it with our environment var version
-            config.removeField("policies");
+            JsonObject policies = config.getObject("policies");
+            if (policies == null) {
+                policies = new JsonObject();
+                config.putObject("policies", policies);
+            }
 
-            JsonObject policies = new JsonObject().putObject("load_balancing", new JsonObject().putString("name", "DCAwareRoundRobinPolicy")
-                                                                                               .putString("local_dc", envVarLocalDC));
-            super.initPolicies(config.putObject("policies", policies));
+            JsonObject loadBalancing = new JsonObject();
+            loadBalancing.putString("name", "DCAwareRoundRobinPolicy").putString("local_dc", envVarLocalDC);
+
+            policies.putObject("load_balancing", loadBalancing);
+
+            super.initPolicies(config);
         }
     }
 }
