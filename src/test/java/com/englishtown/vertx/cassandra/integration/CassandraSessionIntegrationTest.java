@@ -7,7 +7,6 @@ import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Test;
@@ -89,13 +88,6 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         String dateTime = new SimpleDateFormat("yyMMddHHmmss").format(new Date());
         keyspace = TEST_KEYSPACE_BASE + dateTime;
 
-        String envVarLocalDc = container.env().get(EnvironmentCassandraConfigurator.ENV_VAR_LOCAL_DC);
-        if (Strings.isNullOrEmpty(envVarLocalDc)) {
-            createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
-        } else {
-            createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', '" + envVarLocalDc + "' : 1 };";
-        }
-
         final Cluster.Builder builder = new Cluster.Builder();
         Provider<Cluster.Builder> builderProvider = new Provider<Cluster.Builder>() {
             @Override
@@ -110,6 +102,20 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
         Metadata metadata = session.getMetadata();
         if (metadata.getKeyspace(keyspace) != null) {
             session.execute("DROP KEYSPACE IF EXISTS " + keyspace + ";");
+        }
+
+        // Find out which node is closest and use that for the networktopologystrategy
+        for (Host host : metadata.getAllHosts()) {
+            if (session.getCluster().getConfiguration().getPolicies().getLoadBalancingPolicy().distance(host) == HostDistance.LOCAL) {
+                createKeyspaceCommand = "CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', '" + host.getDatacenter() + "' : 1 };";
+                break;
+            }
+        }
+
+        if (createKeyspaceCommand == null) {
+            startedResult.setFailure(new Throwable("Could not find a local host for the test"));
+
+            return;
         }
 
         startedResult.setResult(null);
