@@ -54,4 +54,12 @@ public interface WhenCassandraSession extends AutoCloseable {
      * otherwise.
      */
     boolean isClosed();
+
+    /**
+     * Returns the {@code Cluster} object this session is part of.
+     *
+     * @return the {@code Cluster} object this session is part of.
+     */
+    public Cluster getCluster();
+
 }

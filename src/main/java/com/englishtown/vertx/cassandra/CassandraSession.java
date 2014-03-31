@@ -93,4 +93,11 @@ public interface CassandraSession extends AutoCloseable {
      */
     boolean isClosed();
 
+    /**
+     * Returns the {@code Cluster} object this session is part of.
+     *
+     * @return the {@code Cluster} object this session is part of.
+     */
+    public Cluster getCluster();
+
 }

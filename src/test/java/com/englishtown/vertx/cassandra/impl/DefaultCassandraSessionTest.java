@@ -162,6 +162,8 @@ public class DefaultCassandraSessionTest {
         verify(cluster, times(0)).isClosed();
         verify(session, times(1)).isClosed();
 
+        assertEquals(cluster, cassandraSession.getCluster());
+
         seeds.clear();
         try {
             cassandraSession.init(configurator);

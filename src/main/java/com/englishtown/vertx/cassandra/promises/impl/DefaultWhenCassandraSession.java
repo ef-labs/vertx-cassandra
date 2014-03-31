@@ -148,6 +148,16 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     }
 
     /**
+     * Returns the {@code Cluster} object this session is part of.
+     *
+     * @return the {@code Cluster} object this session is part of.
+     */
+    @Override
+    public Cluster getCluster() {
+        return session.getCluster();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

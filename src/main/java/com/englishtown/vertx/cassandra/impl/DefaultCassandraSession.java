@@ -36,10 +36,6 @@ public class DefaultCassandraSession implements CassandraSession {
         init(configurator);
     }
 
-    Cluster getCluster() {
-        return cluster;
-    }
-
     CassandraConfigurator getConfigurator() {
         return configurator;
     }
@@ -144,6 +140,16 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public boolean isClosed() {
         return (session == null ? true : session.isClosed());
+    }
+
+    /**
+     * Returns the {@code Cluster} object this session is part of.
+     *
+     * @return the {@code Cluster} object this session is part of.
+     */
+    @Override
+    public Cluster getCluster() {
+        return cluster;
     }
 
     @Override
