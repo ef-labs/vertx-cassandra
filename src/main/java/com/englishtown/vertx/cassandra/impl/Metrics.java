@@ -21,27 +21,32 @@ import java.util.concurrent.ConcurrentMap;
  */
 class Metrics implements AutoCloseable {
 
-    private MetricRegistry registry = new MetricRegistry();
+    private final DefaultCassandraSession session;
+    private final MetricRegistry registry = new MetricRegistry();
     private JmxReporter reporter;
 
-    public Metrics(DefaultCassandraSession session) {
-        init(session);
+    Metrics(DefaultCassandraSession session) {
+        this.session = session;
     }
 
-    protected void init(final DefaultCassandraSession session) {
+    protected void afterReconnect() {
 
         final Cluster cluster = session.getCluster();
         Configuration configuration = cluster.getConfiguration();
 
+        String name = "config";
         final String config = getConfiguration(session.getConfigurator(), configuration).encodePrettily();
-        registry.register("config", new Gauge<String>() {
+        registry.remove(name);
+        registry.register(name, new Gauge<String>() {
             @Override
             public String getValue() {
                 return config;
             }
         });
 
-        registry.register("closed", new Gauge<Boolean>() {
+        name = "closed";
+        registry.remove(name);
+        registry.register(name, new Gauge<Boolean>() {
             @Override
             public Boolean getValue() {
                 return session.isClosed();
@@ -49,6 +54,11 @@ class Metrics implements AutoCloseable {
         });
 
         cluster.register(new GaugeStateListener());
+
+        if (reporter != null) {
+            reporter.close();
+            reporter = null;
+        }
 
         if (configuration.getMetricsOptions().isJMXReportingEnabled()) {
             String domain = "et.cass." + cluster.getClusterName() + "-metrics";
@@ -151,28 +161,38 @@ class Metrics implements AutoCloseable {
 
         public GaugeStateListener() {
 
-            registry.register("added-hosts", new Gauge<String>() {
+            String name;
+
+            name = "added-hosts";
+            registry.remove(name);
+            registry.register(name, new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(addedHosts);
                 }
             });
 
-            registry.register("up-hosts", new Gauge<String>() {
+            name = "up-hosts";
+            registry.remove(name);
+            registry.register(name, new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(upHosts);
                 }
             });
 
-            registry.register("down-hosts", new Gauge<String>() {
+            name = "down-hosts";
+            registry.remove(name);
+            registry.register(name, new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(downHosts);
                 }
             });
 
-            registry.register("removed-hosts", new Gauge<String>() {
+            name = "removed-hosts";
+            registry.remove(name);
+            registry.register(name, new Gauge<String>() {
                 @Override
                 public String getValue() {
                     return stringify(removedHosts);

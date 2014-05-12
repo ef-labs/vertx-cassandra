@@ -138,7 +138,9 @@ public class CassandraSessionIntegrationTest extends TestVerticle {
     @Override
     public void stop() {
         try {
-            session.close();
+            if (session != null) {
+                session.close();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

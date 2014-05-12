@@ -22,7 +22,7 @@ public class DefaultCassandraSession implements CassandraSession {
     private final Provider<Cluster.Builder> builderProvider;
     private final Vertx vertx;
 
-    protected Cluster cluster;
+    protected Cluster.Builder clusterBuilder;
     protected Session session;
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
@@ -33,6 +33,7 @@ public class DefaultCassandraSession implements CassandraSession {
         this.builderProvider = builderProvider;
         this.configurator = configurator;
         this.vertx = vertx;
+        this.metrics = new Metrics(this);
         init(configurator);
     }
 
@@ -48,44 +49,40 @@ public class DefaultCassandraSession implements CassandraSession {
             throw new RuntimeException("Cassandra seeds are missing");
         }
 
-        Cluster.Builder builder = builderProvider.get();
+        clusterBuilder = builderProvider.get();
 
         // Add cassandra cluster contact points
         for (String seed : seeds) {
-            builder.addContactPoint(seed);
+            clusterBuilder.addContactPoint(seed);
         }
 
         // Add policies to cluster builder
         if (configurator.getLoadBalancingPolicy() != null) {
-            builder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
+            clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
         }
 
         // Add pooling options to cluster builder
         if (configurator.getPoolingOptions() != null) {
-            builder.withPoolingOptions(configurator.getPoolingOptions());
+            clusterBuilder.withPoolingOptions(configurator.getPoolingOptions());
         }
 
         // Add socket options to cluster builder
         if (configurator.getSocketOptions() != null) {
-            builder.withSocketOptions(configurator.getSocketOptions());
+            clusterBuilder.withSocketOptions(configurator.getSocketOptions());
         }
 
         if (configurator.getQueryOptions() != null) {
-            builder.withQueryOptions(configurator.getQueryOptions());
+            clusterBuilder.withQueryOptions(configurator.getQueryOptions());
         }
 
         if (configurator.getMetricsOptions() != null) {
             if (!configurator.getMetricsOptions().isJMXReportingEnabled()) {
-                builder.withoutJMXReporting();
+                clusterBuilder.withoutJMXReporting();
             }
         }
 
-        // Build cluster and metrics
-        cluster = builder.build();
-        metrics = new Metrics(this);
-
-        // Connect
-        session = cluster.connect();
+        // Build cluster and connect
+        reconnect();
 
     }
 
@@ -134,7 +131,8 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public Metadata getMetadata() {
-        return cluster.getMetadata();
+        Cluster cluster = getCluster();
+        return cluster == null ? null : cluster.getMetadata();
     }
 
     @Override
@@ -149,18 +147,27 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public Cluster getCluster() {
-        return cluster;
+        return session == null ? null : session.getCluster();
+    }
+
+    /**
+     * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
+     */
+    @Override
+    public void reconnect() {
+        Session oldSession = session;
+        session = clusterBuilder.build().connect();
+        if (oldSession != null) {
+            oldSession.closeAsync();
+        }
+        metrics.afterReconnect();
     }
 
     @Override
     public void close() throws Exception {
         if (session != null) {
-            session.close();
+            session.closeAsync();
             session = null;
-        }
-        if (cluster != null) {
-            cluster.close();
-            cluster = null;
         }
         if (metrics != null) {
             metrics.close();

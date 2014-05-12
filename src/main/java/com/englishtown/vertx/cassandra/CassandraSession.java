@@ -100,4 +100,9 @@ public interface CassandraSession extends AutoCloseable {
      */
     public Cluster getCluster();
 
+    /**
+     * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
+     */
+    public void reconnect();
+
 }

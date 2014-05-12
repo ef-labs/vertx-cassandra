@@ -119,6 +119,7 @@ public class DefaultCassandraSessionTest {
         when(configurator.getSeeds()).thenReturn(seeds);
         seeds.add("127.0.0.1");
 
+        when(session.getCluster()).thenReturn(cluster);
         when(session.prepareAsync(any(RegularStatement.class))).thenReturn(preparedStatementFuture);
         when(session.prepareAsync(anyString())).thenReturn(preparedStatementFuture);
 
@@ -274,7 +275,6 @@ public class DefaultCassandraSessionTest {
     @Test
     public void testClose() throws Exception {
         cassandraSession.close();
-        verify(cluster).close();
-        verify(session).close();
+        verify(session).closeAsync();
     }
 }
