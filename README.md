@@ -70,7 +70,7 @@ If there is no configuration, neither JSON nor environment variables, the module
 ## How to Use
 This module uses HK2 to provide an implementation of `CassandraSession` via injection. `CassandraSession` provides methods that allow statements to be executed, statements to be prepared and for the reading of metadata.
 
-The execution and preparation methods have both synchronous and asynchronous variants. The aysnchronous versions take a `FutureCallBack` class that is updated once the method has finished.
+The execution and preparation methods have both synchronous and asynchronous variants. The asynchronous versions take a `FutureCallBack` class that is updated once the method has finished.
 
 `FutureCallback` is part of [Guava](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/FutureCallback.html) and the JAR is included as part of the Datastax java driver used by this module.
 
