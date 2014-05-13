@@ -19,7 +19,8 @@ public class CreateTable extends BuiltTableStatement {
 
     /**
      * Returns a collection of the columns to be created
-     * @return
+     *
+     * @return collection of columns to create
      */
     public Collection<Column> getColumns() {
         return columns.values();

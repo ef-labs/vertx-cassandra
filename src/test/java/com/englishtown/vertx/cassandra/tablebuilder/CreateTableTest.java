@@ -9,7 +9,6 @@ public class CreateTableTest {
 
     @Before
     public void setUp() throws Exception {
-
     }
 
     @Test

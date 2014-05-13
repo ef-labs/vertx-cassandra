@@ -137,7 +137,7 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public boolean isClosed() {
-        return (session == null ? true : session.isClosed());
+        return (session == null || session.isClosed());
     }
 
     /**

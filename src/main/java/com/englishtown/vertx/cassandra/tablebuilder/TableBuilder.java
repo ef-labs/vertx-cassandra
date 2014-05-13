@@ -1,8 +1,10 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ColumnMetadata;
 import com.datastax.driver.core.TableMetadata;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Static methods to build a CQL3 table
@@ -43,22 +45,22 @@ public final class TableBuilder {
      * @param desired  the desired end result
      * @return a set of statements to modify an existing table
      */
-    public static BatchStatement alter(TableMetadata existing, CreateTable desired) {
-        BatchStatement batch = new BatchStatement();
+    public static List<AlterTable> alter(TableMetadata existing, CreateTable desired) {
+        List<AlterTable> results = new ArrayList<>();
 
         for (BuiltTableStatement.Column column : desired.getColumns()) {
             ColumnMetadata columnMetadata = existing.getColumn(column.getName());
             if (columnMetadata == null) {
-                batch.add(alter(desired.getKeyspace(), desired.getTable()).addColumn(column.getName(), column.getType()));
+                results.add(alter(desired.getKeyspace(), desired.getTable()).addColumn(column.getName(), column.getType()));
             } else if (!columnMetadata.getType().toString().equalsIgnoreCase(column.getType())) {
                 if (columnMetadata.isStatic()) {
                     throw new IllegalArgumentException("A static column cannot have its type modified");
                 }
-                batch.add(alter(desired.getKeyspace(), desired.getTable()).alterColumn(column.getName(), column.getType()));
+                results.add(alter(desired.getKeyspace(), desired.getTable()).alterColumn(column.getName(), column.getType()));
             }
         }
 
-        return batch;
+        return results;
     }
 
     /**
