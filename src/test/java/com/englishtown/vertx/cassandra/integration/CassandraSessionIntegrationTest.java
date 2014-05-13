@@ -43,7 +43,7 @@ public class CassandraSessionIntegrationTest extends IntegrationTestBase {
 
         final Context context = vertx.currentContext();
 
-        session.executeAsync(createKeyspaceCommand, new FutureCallback<ResultSet>() {
+        session.executeAsync(createKeyspaceStatement, new FutureCallback<ResultSet>() {
             @Override
             public void onSuccess(ResultSet result) {
                 // Make sure we're on the right context

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Static methods to build a CQL3 table
+ * Static methods to build a CQL3 table statement
  */
 public final class TableBuilder {
 

@@ -1,7 +1,7 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
 /**
- * DROP TABLE statement builder
+ * DROP TABLE CQL3 statement builder
  */
 public class DropTable extends BuiltTableStatement {
 

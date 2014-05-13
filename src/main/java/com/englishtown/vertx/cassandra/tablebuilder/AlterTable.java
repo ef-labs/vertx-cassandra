@@ -1,7 +1,7 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
 /**
- * ALTER TABLE statement builder
+ * ALTER TABLE CQL3 statement builder
  */
 public class AlterTable extends BuiltTableStatement {
 

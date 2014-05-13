@@ -3,7 +3,7 @@ package com.englishtown.vertx.cassandra.tablebuilder;
 import java.util.*;
 
 /**
- * A built CQL3 table
+ * CREATE TABLE CQL3 statement builder
  */
 public class CreateTable extends BuiltTableStatement {
 
