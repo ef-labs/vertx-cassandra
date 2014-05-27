@@ -10,14 +10,14 @@
     <parent>
         <groupId>com.englishtown</groupId>
         <artifactId>oss-parent-vertx</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.4.0</version>
     </parent>
 
     <properties>
         <cassandra.driver.version>2.0.2</cassandra.driver.version>
-        <vertx.mod.hk2.version>1.6.0-SNAPSHOT</vertx.mod.hk2.version>
+        <vertx.mod.hk2.version>1.6.0</vertx.mod.hk2.version>
         <mockito.version>1.9.5</mockito.version>
-        <when.version>2.0.0-SNAPSHOT</when.version>
+        <when.version>2.0.0</when.version>
     </properties>
 
     <dependencies>
