@@ -5,6 +5,7 @@ import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -21,21 +22,26 @@ public class DefaultCassandraSession implements CassandraSession {
     private final Provider<Cluster.Builder> builderProvider;
     private final Vertx vertx;
 
-    protected Cluster cluster;
+    protected Cluster.Builder clusterBuilder;
     protected Session session;
-    protected Metadata metadata;
-    protected boolean initialized;
-    protected ConsistencyLevel consistency;
+    protected Metrics metrics;
+    protected CassandraConfigurator configurator;
 
 
     @Inject
-    public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, Vertx vertx) {
+    public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, CassandraConfigurator configurator, Vertx vertx) {
         this.builderProvider = builderProvider;
+        this.configurator = configurator;
         this.vertx = vertx;
+        this.metrics = new Metrics(this);
+        init(configurator);
     }
 
-    @Override
-    public void init(CassandraConfigurator configurator) {
+    CassandraConfigurator getConfigurator() {
+        return configurator;
+    }
+
+    protected void init(CassandraConfigurator configurator) {
 
         // Get array of IPs, default to localhost
         List<String> seeds = configurator.getSeeds();
@@ -43,33 +49,45 @@ public class DefaultCassandraSession implements CassandraSession {
             throw new RuntimeException("Cassandra seeds are missing");
         }
 
-        Cluster.Builder builder = builderProvider.get();
+        clusterBuilder = builderProvider.get();
 
         // Add cassandra cluster contact points
         for (String seed : seeds) {
-            builder.addContactPoint(seed);
+            clusterBuilder.addContactPoint(seed);
         }
 
         // Add policies to cluster builder
         if (configurator.getLoadBalancingPolicy() != null) {
-            builder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
+            clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
         }
 
-        // Build cluster and session
-        cluster = builder.build();
-        session = cluster.connect();
-        metadata = cluster.getMetadata();
+        // Add pooling options to cluster builder
+        if (configurator.getPoolingOptions() != null) {
+            clusterBuilder.withPoolingOptions(configurator.getPoolingOptions());
+        }
 
-        consistency = configurator.getConsistency();
-        initialized = true;
+        // Add socket options to cluster builder
+        if (configurator.getSocketOptions() != null) {
+            clusterBuilder.withSocketOptions(configurator.getSocketOptions());
+        }
+
+        if (configurator.getQueryOptions() != null) {
+            clusterBuilder.withQueryOptions(configurator.getQueryOptions());
+        }
+
+        if (configurator.getMetricsOptions() != null) {
+            if (!configurator.getMetricsOptions().isJMXReportingEnabled()) {
+                clusterBuilder.withoutJMXReporting();
+            }
+        }
+
+        // Build cluster and connect
+        reconnect();
+
     }
 
     @Override
     public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        checkInitialized();
-        if (consistency != null && statement.getConsistencyLevel() == null) {
-            statement.setConsistencyLevel(consistency);
-        }
         final ResultSetFuture future = session.executeAsync(statement);
         Futures.addCallback(future, wrapCallback(callback));
     }
@@ -81,10 +99,6 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public ResultSet execute(Statement statement) {
-        checkInitialized();
-        if (consistency != null && statement.getConsistencyLevel() == null) {
-            statement.setConsistencyLevel(consistency);
-        }
         return session.execute(statement);
     }
 
@@ -94,22 +108,70 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     @Override
+    public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
+        ListenableFuture<PreparedStatement> future = session.prepareAsync(statement);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public void prepareAsync(String query, FutureCallback<PreparedStatement> callback) {
+        ListenableFuture<PreparedStatement> future = session.prepareAsync(query);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public PreparedStatement prepare(RegularStatement statement) {
+        return session.prepare(statement);
+    }
+
+    @Override
+    public PreparedStatement prepare(String query) {
+        return session.prepare(query);
+    }
+
+    @Override
     public Metadata getMetadata() {
-        checkInitialized();
-        return metadata;
+        Cluster cluster = getCluster();
+        return cluster == null ? null : cluster.getMetadata();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return (session == null || session.isClosed());
+    }
+
+    /**
+     * Returns the {@code Cluster} object this session is part of.
+     *
+     * @return the {@code Cluster} object this session is part of.
+     */
+    @Override
+    public Cluster getCluster() {
+        return session == null ? null : session.getCluster();
+    }
+
+    /**
+     * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
+     */
+    @Override
+    public void reconnect() {
+        Session oldSession = session;
+        session = clusterBuilder.build().connect();
+        if (oldSession != null) {
+            oldSession.closeAsync();
+        }
+        metrics.afterReconnect();
     }
 
     @Override
     public void close() throws Exception {
-        if (cluster != null) {
-            cluster.shutdown();
-            cluster = null;
+        if (session != null) {
+            session.closeAsync();
+            session = null;
         }
-    }
-
-    protected void checkInitialized() {
-        if (!initialized) {
-            throw new IllegalStateException("The DefaultCassandraSession has not been initialized.");
+        if (metrics != null) {
+            metrics.close();
+            metrics = null;
         }
     }
 

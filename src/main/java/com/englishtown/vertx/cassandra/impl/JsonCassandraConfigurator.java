@@ -1,6 +1,6 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
@@ -17,9 +17,14 @@ import java.util.List;
  */
 public class JsonCassandraConfigurator implements CassandraConfigurator {
 
-    private List<String> seeds;
-    private LoadBalancingPolicy loadBalancingPolicy;
-    private ConsistencyLevel consistency;
+    protected final Container container;
+
+    protected List<String> seeds;
+    protected LoadBalancingPolicy loadBalancingPolicy;
+    protected PoolingOptions poolingOptions;
+    protected SocketOptions socketOptions;
+    protected QueryOptions queryOptions;
+    protected MetricsOptions metricsOptions;
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
@@ -30,12 +35,18 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONSISTENCY_THREE = "THREE";
     public static final String CONSISTENCY_QUORUM = "QUORUM";
     public static final String CONSISTENCY_ALL = "ALL";
+    public static final String CONSISTENCY_LOCAL_ONE = "LOCAL_ONE";
     public static final String CONSISTENCY_LOCAL_QUORUM = "LOCAL_QUORUM";
     public static final String CONSISTENCY_EACH_QUORUM = "EACH_QUORUM";
 
     @Inject
     public JsonCassandraConfigurator(Container container) {
-        init(container.config());
+        this(container.config().getObject("cassandra", new JsonObject()), container);
+    }
+
+    public JsonCassandraConfigurator(JsonObject config, Container container) {
+        this.container  = container;
+        init(config);
     }
 
     @Override
@@ -49,11 +60,37 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     @Override
-    public ConsistencyLevel getConsistency() {
-        return consistency;
+    public QueryOptions getQueryOptions() {
+        return queryOptions;
+    }
+
+    @Override
+    public MetricsOptions getMetricsOptions() {
+        return metricsOptions;
+    }
+
+    @Override
+    public PoolingOptions getPoolingOptions() {
+        return poolingOptions;
+    }
+
+    @Override
+    public SocketOptions getSocketOptions() {
+        return socketOptions;
     }
 
     protected void init(JsonObject config) {
+
+        initSeeds(config);
+        initPolicies(config);
+        initPoolingOptions(config);
+        initSocketOptions(config);
+        initQueryOptions(config);
+        initMetricsOptions(config);
+
+    }
+
+    protected void initSeeds(JsonObject config) {
 
         // Get array of IPs, default to localhost
         JsonArray seeds = config.getArray(CONFIG_SEEDS);
@@ -65,10 +102,6 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         for (int i = 0; i < seeds.size(); i++) {
             this.seeds.add(seeds.<String>get(i));
         }
-
-        initPolicies(config);
-        consistency = getConsistency(config);
-
     }
 
     protected void initPolicies(JsonObject config) {
@@ -120,6 +153,110 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
     }
 
+    protected void initPoolingOptions(JsonObject config) {
+
+        JsonObject poolingConfig = config.getObject("pooling");
+
+        if (poolingConfig == null) {
+            return;
+        }
+
+        poolingOptions = new PoolingOptions();
+
+        Integer core_connections_per_host_local = poolingConfig.getInteger("core_connections_per_host_local");
+        Integer core_connections_per_host_remote = poolingConfig.getInteger("core_connections_per_host_remote");
+        Integer max_connections_per_host_local = poolingConfig.getInteger("max_connections_per_host_local");
+        Integer max_connections_per_host_remote = poolingConfig.getInteger("max_connections_per_host_remote");
+        Integer min_simultaneous_requests_local = poolingConfig.getInteger("min_simultaneous_requests_local");
+        Integer min_simultaneous_requests_remote = poolingConfig.getInteger("min_simultaneous_requests_remote");
+        Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
+        Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
+
+        if (core_connections_per_host_local != null) {
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, core_connections_per_host_local);
+        }
+        if (core_connections_per_host_remote != null) {
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, core_connections_per_host_remote);
+        }
+        if (max_connections_per_host_local != null) {
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, max_connections_per_host_local);
+        }
+        if (max_connections_per_host_remote != null) {
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, max_connections_per_host_remote);
+        }
+        if (min_simultaneous_requests_local != null) {
+            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, min_simultaneous_requests_local);
+        }
+        if (min_simultaneous_requests_remote != null) {
+            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, min_simultaneous_requests_remote);
+        }
+        if (max_simultaneous_requests_local != null) {
+            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local);
+        }
+        if (max_simultaneous_requests_remote != null) {
+            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote);
+        }
+
+    }
+
+    protected void initSocketOptions(JsonObject config) {
+
+        JsonObject socketConfig = config.getObject("socket");
+
+        if (socketConfig == null) {
+            return;
+        }
+
+        socketOptions = new SocketOptions();
+
+        Integer connect_timeout_millis = socketConfig.getInteger("connect_timeout_millis");
+        Integer read_timeout_millis = socketConfig.getInteger("read_timeout_millis");
+        Boolean keep_alive = socketConfig.getBoolean("keep_alive");
+        Boolean reuse_address = socketConfig.getBoolean("reuse_address");
+        Integer receive_buffer_size = socketConfig.getInteger("receive_buffer_size");
+        Integer send_buffer_size = socketConfig.getInteger("send_buffer_size");
+        Integer so_linger = socketConfig.getInteger("so_linger");
+        Boolean tcp_no_delay = socketConfig.getBoolean("tcp_no_delay");
+
+        if (connect_timeout_millis != null) {
+            socketOptions.setConnectTimeoutMillis(connect_timeout_millis);
+        }
+        if (read_timeout_millis != null) {
+            socketOptions.setReadTimeoutMillis(read_timeout_millis);
+        }
+        if (keep_alive != null) {
+            socketOptions.setKeepAlive(keep_alive);
+        }
+        if (reuse_address != null) {
+            socketOptions.setReuseAddress(reuse_address);
+        }
+        if (receive_buffer_size != null) {
+            socketOptions.setReceiveBufferSize(receive_buffer_size);
+        }
+        if (send_buffer_size != null) {
+            socketOptions.setSendBufferSize(send_buffer_size);
+        }
+        if (so_linger != null) {
+            socketOptions.setSoLinger(so_linger);
+        }
+        if (tcp_no_delay != null) {
+            socketOptions.setTcpNoDelay(tcp_no_delay);
+        }
+
+    }
+
+    protected void initQueryOptions(JsonObject config) {
+
+        ConsistencyLevel consistency = getConsistency(config);
+
+        if (consistency == null) {
+            return;
+        }
+
+        queryOptions = new QueryOptions().setConsistencyLevel(consistency);
+
+    }
+
     protected ConsistencyLevel getConsistency(JsonObject config) {
         String consistency = config.getString(CONFIG_CONSISTENCY_LEVEL);
 
@@ -145,6 +282,9 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         if (consistency.equalsIgnoreCase(CONSISTENCY_ALL)) {
             return ConsistencyLevel.ALL;
         }
+        if (consistency.equalsIgnoreCase(CONSISTENCY_LOCAL_ONE)) {
+            return ConsistencyLevel.LOCAL_ONE;
+        }
         if (consistency.equalsIgnoreCase(CONSISTENCY_LOCAL_QUORUM)) {
             return ConsistencyLevel.LOCAL_QUORUM;
         }
@@ -153,6 +293,19 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
 
         throw new IllegalArgumentException("'" + consistency + "' is not a valid consistency level.");
+    }
+
+    protected void initMetricsOptions(JsonObject config) {
+
+        JsonObject metrics = config.getObject("metrics");
+
+        if (metrics == null) {
+            return;
+        }
+
+        boolean jmx_enabled = metrics.getBoolean("jmx_enabled", true);
+        metricsOptions = new MetricsOptions(jmx_enabled);
+
     }
 
 }

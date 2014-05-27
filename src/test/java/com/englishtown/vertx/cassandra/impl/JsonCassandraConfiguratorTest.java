@@ -63,7 +63,8 @@ public class JsonCassandraConfiguratorTest {
 
     @Before
     public void setUp() throws Exception {
-        when(container.config()).thenReturn(config);
+        JsonObject baseConfig = new JsonObject().putObject("cassandra", config);
+        when(container.config()).thenReturn(baseConfig);
     }
 
     @Test
@@ -132,67 +133,116 @@ public class JsonCassandraConfiguratorTest {
     }
 
     @Test
-    public void testGetConsistency() throws Exception {
+    public void testGetPoolingOptions() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getPoolingOptions());
+
+        config.putObject("pooling", new JsonObject()
+                .putNumber("core_connections_per_host_local", 1)
+                .putNumber("core_connections_per_host_remote", 2)
+                .putNumber("max_connections_per_host_local", 3)
+                .putNumber("max_connections_per_host_remote", 4)
+                .putNumber("min_simultaneous_requests_local", 5)
+                .putNumber("min_simultaneous_requests_remote", 6)
+                .putNumber("max_simultaneous_requests_local", 7)
+                .putNumber("max_simultaneous_requests_remote", 8)
+        );
+
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getPoolingOptions());
+
+        PoolingOptions options = configurator.getPoolingOptions();
+        assertEquals(1, options.getCoreConnectionsPerHost(HostDistance.LOCAL));
+        assertEquals(2, options.getCoreConnectionsPerHost(HostDistance.REMOTE));
+        assertEquals(3, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
+        assertEquals(4, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
+        assertEquals(5, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(6, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+        assertEquals(7, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(8, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+
+    }
+
+    @Test
+    public void testGetSocketOptions() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getSocketOptions());
+
+        config.putObject("socket", new JsonObject()
+                .putNumber("connect_timeout_millis", 32000)
+                .putNumber("read_timeout_millis", 33000)
+                .putBoolean("keep_alive", true)
+                .putBoolean("reuse_address", true)
+                .putNumber("receive_buffer_size", 1024)
+                .putNumber("send_buffer_size", 2048)
+                .putNumber("so_linger", 10)
+                .putBoolean("tcp_no_delay", false)
+        );
+
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getSocketOptions());
+
+        SocketOptions options = configurator.getSocketOptions();
+        assertEquals(32000, options.getConnectTimeoutMillis());
+        assertEquals(33000, options.getReadTimeoutMillis());
+        assertEquals(true, options.getKeepAlive());
+        assertEquals(true, options.getReuseAddress());
+        assertEquals(1024, options.getReceiveBufferSize().intValue());
+        assertEquals(2048, options.getSendBufferSize().intValue());
+        assertEquals(10, options.getSoLinger().intValue());
+        assertEquals(false, options.getTcpNoDelay());
+
+    }
+
+    @Test
+    public void testGetQueryOptions() throws Exception {
 
         JsonCassandraConfigurator configurator;
 
         configurator = new JsonCassandraConfigurator(container);
-        ConsistencyLevel consistency = configurator.getConsistency();
-        assertNull(consistency);
+        assertNull(configurator.getQueryOptions());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "");
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertNull(consistency);
+        assertNull(configurator.getQueryOptions());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ALL);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.ALL, consistency);
+        assertEquals(ConsistencyLevel.ALL, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ANY);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.ANY, consistency);
+        assertEquals(ConsistencyLevel.ANY, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_EACH_QUORUM);
         configurator = new JsonCassandraConfigurator(container);
+        assertEquals(ConsistencyLevel.EACH_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.EACH_QUORUM, consistency);
+        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
+        configurator = new JsonCassandraConfigurator(container);
+        assertEquals(ConsistencyLevel.LOCAL_ONE, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistency);
+        assertEquals(ConsistencyLevel.LOCAL_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ONE);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.ONE, consistency);
+        assertEquals(ConsistencyLevel.ONE, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_QUORUM);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.QUORUM, consistency);
+        assertEquals(ConsistencyLevel.QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_THREE);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.THREE, consistency);
+        assertEquals(ConsistencyLevel.THREE, configurator.getQueryOptions().getConsistencyLevel());
 
         config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_TWO);
         configurator = new JsonCassandraConfigurator(container);
-
-        consistency = configurator.getConsistency();
-        assertEquals(ConsistencyLevel.TWO, consistency);
+        assertEquals(ConsistencyLevel.TWO, configurator.getQueryOptions().getConsistencyLevel());
 
         try {
             config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "invalid consistency");
@@ -204,4 +254,26 @@ public class JsonCassandraConfiguratorTest {
         }
 
     }
+
+    @Test
+    public void testGetMetricsOptions() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getMetricsOptions());
+
+        JsonObject metrics = new JsonObject();
+
+        config.putObject("metrics", metrics);
+        metrics.putBoolean("jmx_enabled", true);
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getMetricsOptions());
+        assertTrue(configurator.getMetricsOptions().isJMXReportingEnabled());
+
+        metrics.putBoolean("jmx_enabled", false);
+        configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getMetricsOptions());
+        assertFalse(configurator.getMetricsOptions().isJMXReportingEnabled());
+
+    }
+
 }
