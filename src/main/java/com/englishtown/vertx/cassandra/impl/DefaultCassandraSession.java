@@ -11,7 +11,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.util.List;
 
 /**
@@ -19,18 +18,18 @@ import java.util.List;
  */
 public class DefaultCassandraSession implements CassandraSession {
 
-    private final Provider<Cluster.Builder> builderProvider;
+    private Cluster.Builder clusterBuilder;
     private final Vertx vertx;
 
-    protected Cluster.Builder clusterBuilder;
+    protected Cluster cluster;
     protected Session session;
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
 
 
     @Inject
-    public DefaultCassandraSession(Provider<Cluster.Builder> builderProvider, CassandraConfigurator configurator, Vertx vertx) {
-        this.builderProvider = builderProvider;
+    public DefaultCassandraSession(Cluster.Builder clusterBuilder, CassandraConfigurator configurator, Vertx vertx) {
+        this.clusterBuilder = clusterBuilder;
         this.configurator = configurator;
         this.vertx = vertx;
         this.metrics = new Metrics(this);
@@ -48,8 +47,6 @@ public class DefaultCassandraSession implements CassandraSession {
         if (seeds == null || seeds.isEmpty()) {
             throw new RuntimeException("Cassandra seeds are missing");
         }
-
-        clusterBuilder = builderProvider.get();
 
         // Add cassandra cluster contact points
         for (String seed : seeds) {
@@ -82,6 +79,7 @@ public class DefaultCassandraSession implements CassandraSession {
         }
 
         // Build cluster and connect
+        cluster = clusterBuilder.build();
         reconnect();
 
     }
@@ -156,7 +154,7 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public void reconnect() {
         Session oldSession = session;
-        session = clusterBuilder.build().connect();
+        session = cluster.connect();
         if (oldSession != null) {
             oldSession.closeAsync();
         }
@@ -164,15 +162,17 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     @Override
-    public void close() throws Exception {
-        if (session != null) {
-            session.closeAsync();
-            session = null;
-        }
+    public void close() {
         if (metrics != null) {
             metrics.close();
             metrics = null;
         }
+        if (cluster != null) {
+            cluster.closeAsync().force();
+            cluster = null;
+            session = null;
+        }
+        clusterBuilder = null;
     }
 
     private <V> FutureCallback<V> wrapCallback(final FutureCallback<V> callback) {

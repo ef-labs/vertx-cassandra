@@ -15,7 +15,6 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 import org.vertx.testtools.VertxAssert;
 
-import javax.inject.Provider;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -42,15 +41,9 @@ public abstract class IntegrationTestBase extends TestVerticle {
         keyspace = TEST_KEYSPACE_BASE + dateTime;
 
         final Cluster.Builder builder = new Cluster.Builder();
-        Provider<Cluster.Builder> builderProvider = new Provider<Cluster.Builder>() {
-            @Override
-            public Cluster.Builder get() {
-                return builder;
-            }
-        };
 
         CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
-        session = new DefaultCassandraSession(builderProvider, configurator, vertx);
+        session = new DefaultCassandraSession(builder, configurator, vertx);
         whenSession = new DefaultWhenCassandraSession(session);
 
         Metadata metadata = session.getMetadata();
