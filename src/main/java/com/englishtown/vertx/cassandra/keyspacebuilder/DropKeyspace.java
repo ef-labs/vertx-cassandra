@@ -23,7 +23,7 @@ public class DropKeyspace extends BuiltKeyspaceStatement {
     public StringBuilder buildQueryString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("DROP KEYSPACE " );
+        sb.append("DROP KEYSPACE ");
         if (ifExists) {
             sb.append("IF EXISTS ");
         }

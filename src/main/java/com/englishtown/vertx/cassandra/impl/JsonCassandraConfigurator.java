@@ -45,7 +45,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     public JsonCassandraConfigurator(JsonObject config, Container container) {
-        this.container  = container;
+        this.container = container;
         init(config);
     }
 

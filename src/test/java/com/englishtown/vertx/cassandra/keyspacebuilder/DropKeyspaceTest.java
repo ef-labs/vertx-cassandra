@@ -3,7 +3,7 @@ package com.englishtown.vertx.cassandra.keyspacebuilder;
 import com.datastax.driver.core.Statement;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class DropKeyspaceTest {
 
