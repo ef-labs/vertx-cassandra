@@ -1,6 +1,9 @@
 package com.englishtown.vertx.cassandra;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.MetricsOptions;
+import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.QueryOptions;
+import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 
 import java.util.List;

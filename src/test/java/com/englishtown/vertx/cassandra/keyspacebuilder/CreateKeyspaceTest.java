@@ -28,9 +28,9 @@ public class CreateKeyspaceTest {
 
         Statement createKeyspace = KeyspaceBuilder.create(name)
                 .networkTopologyStrategy()
-                    .dc("dc1", 3)
-                    .dc("dc2", 2)
-                    .dc("dc3", 1);
+                .dc("dc1", 3)
+                .dc("dc2", 2)
+                .dc("dc3", 1);
 
         String cql = createKeyspace.toString();
         assertEquals("CREATE KEYSPACE test_keyspace WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', 'dc1' : 3, 'dc2' : 2, 'dc3' : 1 }", cql);

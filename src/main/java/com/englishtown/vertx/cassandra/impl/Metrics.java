@@ -24,12 +24,16 @@ class Metrics implements AutoCloseable {
     private final DefaultCassandraSession session;
     private final MetricRegistry registry = new MetricRegistry();
     private JmxReporter reporter;
+    private GaugeStateListener listener;
 
     Metrics(DefaultCassandraSession session) {
         this.session = session;
     }
 
     protected void afterReconnect() {
+
+        // Close any existing metrics
+        close();
 
         final Cluster cluster = session.getCluster();
         Configuration configuration = cluster.getConfiguration();
@@ -53,12 +57,8 @@ class Metrics implements AutoCloseable {
             }
         });
 
-        cluster.register(new GaugeStateListener());
-
-        if (reporter != null) {
-            reporter.close();
-            reporter = null;
-        }
+        listener = new GaugeStateListener();
+        cluster.register(listener);
 
         if (configuration.getMetricsOptions().isJMXReportingEnabled()) {
             String domain = "et.cass." + cluster.getClusterName() + "-metrics";
@@ -146,9 +146,14 @@ class Metrics implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
+        if (listener != null) {
+            session.getCluster().unregister(listener);
+            listener = null;
+        }
         if (reporter != null) {
             reporter.stop();
+            reporter = null;
         }
     }
 

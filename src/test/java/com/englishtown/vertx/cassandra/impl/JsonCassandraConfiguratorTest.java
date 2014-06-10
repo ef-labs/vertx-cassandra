@@ -76,9 +76,9 @@ public class JsonCassandraConfiguratorTest {
         assertEquals("127.0.0.1", configurator.getSeeds().get(0));
 
         config.putArray("seeds", new JsonArray()
-                .addString("127.0.0.1")
-                .addString("127.0.0.2")
-                .addString("127.0.0.3")
+                        .addString("127.0.0.1")
+                        .addString("127.0.0.2")
+                        .addString("127.0.0.3")
         );
 
         configurator = new JsonCassandraConfigurator(container);
@@ -123,7 +123,7 @@ public class JsonCassandraConfiguratorTest {
 
         config.putObject("policies", new JsonObject()
                 .putObject("load_balancing", new JsonObject()
-                        .putString("name", "com.englishtown.vertx.cassandra.impl.JsonCassandraConfiguratorTest$TestLoadBalancingPolicy")
+                                .putString("name", "com.englishtown.vertx.cassandra.impl.JsonCassandraConfiguratorTest$TestLoadBalancingPolicy")
                 ));
 
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
@@ -139,14 +139,14 @@ public class JsonCassandraConfiguratorTest {
         assertNull(configurator.getPoolingOptions());
 
         config.putObject("pooling", new JsonObject()
-                .putNumber("core_connections_per_host_local", 1)
-                .putNumber("core_connections_per_host_remote", 2)
-                .putNumber("max_connections_per_host_local", 3)
-                .putNumber("max_connections_per_host_remote", 4)
-                .putNumber("min_simultaneous_requests_local", 5)
-                .putNumber("min_simultaneous_requests_remote", 6)
-                .putNumber("max_simultaneous_requests_local", 7)
-                .putNumber("max_simultaneous_requests_remote", 8)
+                        .putNumber("core_connections_per_host_local", 1)
+                        .putNumber("core_connections_per_host_remote", 2)
+                        .putNumber("max_connections_per_host_local", 3)
+                        .putNumber("max_connections_per_host_remote", 4)
+                        .putNumber("min_simultaneous_requests_local", 5)
+                        .putNumber("min_simultaneous_requests_remote", 6)
+                        .putNumber("max_simultaneous_requests_local", 7)
+                        .putNumber("max_simultaneous_requests_remote", 8)
         );
 
         configurator = new JsonCassandraConfigurator(container);
@@ -171,14 +171,14 @@ public class JsonCassandraConfiguratorTest {
         assertNull(configurator.getSocketOptions());
 
         config.putObject("socket", new JsonObject()
-                .putNumber("connect_timeout_millis", 32000)
-                .putNumber("read_timeout_millis", 33000)
-                .putBoolean("keep_alive", true)
-                .putBoolean("reuse_address", true)
-                .putNumber("receive_buffer_size", 1024)
-                .putNumber("send_buffer_size", 2048)
-                .putNumber("so_linger", 10)
-                .putBoolean("tcp_no_delay", false)
+                        .putNumber("connect_timeout_millis", 32000)
+                        .putNumber("read_timeout_millis", 33000)
+                        .putBoolean("keep_alive", true)
+                        .putBoolean("reuse_address", true)
+                        .putNumber("receive_buffer_size", 1024)
+                        .putNumber("send_buffer_size", 2048)
+                        .putNumber("so_linger", 10)
+                        .putBoolean("tcp_no_delay", false)
         );
 
         configurator = new JsonCassandraConfigurator(container);

@@ -17,7 +17,6 @@ import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 
-import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -59,6 +58,8 @@ public class DefaultCassandraSessionTest {
     ListenableFuture<PreparedStatement> preparedStatementFuture;
     @Mock
     FutureCallback<PreparedStatement> preparedStatementCallback;
+    @Mock
+    CloseFuture closeFuture;
     @Captor
     ArgumentCaptor<Statement> statementCaptor;
     @Captor
@@ -107,13 +108,8 @@ public class DefaultCassandraSessionTest {
         when(cluster.getConfiguration()).thenReturn(configuration);
         when(cluster.connect()).thenReturn(session);
         when(cluster.getMetadata()).thenReturn(metadata);
-
-        Provider<Cluster.Builder> provider = new Provider<Cluster.Builder>() {
-            @Override
-            public Cluster.Builder get() {
-                return clusterBuilder;
-            }
-        };
+        when(cluster.closeAsync()).thenReturn(closeFuture);
+        when(closeFuture.force()).thenReturn(closeFuture);
 
         when(configurator.getSeeds()).thenReturn(seeds);
         seeds.add("127.0.0.1");
@@ -122,7 +118,7 @@ public class DefaultCassandraSessionTest {
         when(session.prepareAsync(any(RegularStatement.class))).thenReturn(preparedStatementFuture);
         when(session.prepareAsync(anyString())).thenReturn(preparedStatementFuture);
 
-        cassandraSession = new DefaultCassandraSession(provider, configurator, vertx);
+        cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
 
     }
 
@@ -274,6 +270,7 @@ public class DefaultCassandraSessionTest {
     @Test
     public void testClose() throws Exception {
         cassandraSession.close();
-        verify(session).closeAsync();
+        verify(cluster).closeAsync();
+        verify(closeFuture).force();
     }
 }
