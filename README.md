@@ -68,7 +68,7 @@ So the examples given here are akin to having this in the config file:
 If there is no configuration, neither JSON nor environment variables, the module will default to looking for cassandra at 127.0.0.1 with the Cassandra driver defaults for everything.
 
 ## How to Use
-This module uses HK2 to provide an implementation of `CassandraSession` via injection. `CassandraSession` provides methods that allow statements to be executed, statements to be prepared and for the reading of metadata.
+This module uses HK2 or Guice to provide an implementation of `CassandraSession` via injection. `CassandraSession` provides methods that allow statements to be executed, statements to be prepared and for the reading of metadata.
 
 The execution and preparation methods have both synchronous and asynchronous variants. The asynchronous versions take a `FutureCallBack` class that is updated once the method has finished.
 
