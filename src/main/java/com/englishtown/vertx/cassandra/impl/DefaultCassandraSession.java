@@ -57,6 +57,9 @@ public class DefaultCassandraSession implements CassandraSession {
         if (configurator.getLoadBalancingPolicy() != null) {
             clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
         }
+        if (configurator.getReconnectionPolicy() != null) {
+            clusterBuilder.withReconnectionPolicy(configurator.getReconnectionPolicy());
+        }
 
         // Add pooling options to cluster builder
         if (configurator.getPoolingOptions() != null) {

@@ -1,8 +1,7 @@
 package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,6 +61,13 @@ public class JsonCassandraConfiguratorTest {
 
         @Override
         public void onRemove(Host host) {
+        }
+    }
+
+    public static class TestReconnectionPolicy implements ReconnectionPolicy {
+        @Override
+        public ReconnectionSchedule newSchedule() {
+            return null;
         }
     }
 
@@ -127,12 +133,72 @@ public class JsonCassandraConfiguratorTest {
 
         config.putObject("policies", new JsonObject()
                 .putObject("load_balancing", new JsonObject()
-                                .putString("name", "com.englishtown.vertx.cassandra.impl.JsonCassandraConfiguratorTest$TestLoadBalancingPolicy")
+                                .putString("name", TestLoadBalancingPolicy.class.getName())
                 ));
 
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
         assertNotNull(configurator.getLoadBalancingPolicy());
         assertThat(configurator.getLoadBalancingPolicy(), instanceOf(TestLoadBalancingPolicy.class));
+
+    }
+
+    @Test
+    public void testInitPolicies_Reconnection_No_Policies() throws Exception {
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNull(configurator.getReconnectionPolicy());
+    }
+
+    @Test
+    public void testInitPolicies_Reconnection_Missing_Name() throws Exception {
+        config.putObject("policies", new JsonObject().putObject("reconnection", new JsonObject()));
+        try {
+            new JsonCassandraConfigurator(container);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testInitPolicies_Reconnection_ConstantReconnectionPolicy() throws Exception {
+
+        config.putObject("policies", new JsonObject()
+                .putObject("reconnection", new JsonObject()
+                        .putString("name", "constant")
+                        .putNumber("delay", 1000)));
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getReconnectionPolicy());
+        assertThat(configurator.getReconnectionPolicy(), instanceOf(ConstantReconnectionPolicy.class));
+
+    }
+
+    @Test
+    public void testInitPolicies_Reconnection_ExponentialReconnectionPolicy() throws Exception {
+
+        config.putObject("policies", new JsonObject()
+                .putObject("reconnection", new JsonObject()
+                        .putString("name", "exponential")
+                        .putNumber("base_delay", 1000)
+                        .putNumber("max_delay", 5000)));
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getReconnectionPolicy());
+        assertThat(configurator.getReconnectionPolicy(), instanceOf(ExponentialReconnectionPolicy.class));
+
+    }
+
+    @Test
+    public void testInitPolicies_Reconnection_Custom() throws Exception {
+
+        config.putObject("policies", new JsonObject()
+                .putObject("reconnection", new JsonObject()
+                                .putString("name", TestReconnectionPolicy.class.getName())
+                ));
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        assertNotNull(configurator.getReconnectionPolicy());
+        assertThat(configurator.getReconnectionPolicy(), instanceOf(TestReconnectionPolicy.class));
 
     }
 
