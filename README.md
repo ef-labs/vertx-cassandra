@@ -2,8 +2,59 @@
 Non-runnable module that provides functionality for talking to Cassandra.
 
 ## Configuration
-The main configuration is via the normal config.json file for a Vert.x module. A sample config looks like:
+The main configuration is via the normal config.json file for a Vert.x module. 
 
+```json
+    "cassandra": {
+        "seeds": [<seeds>],
+        
+        "policies": {
+            "load_balancing": {
+                "name": "<lb_policy_name>",
+            },
+            "reconnect_policy": {
+                "name": "<reconnect_policy_name>"
+            }
+        },
+        
+        "pooling": {
+            "core_connections_per_host_local": <int>,
+            "core_connections_per_host_remote": <int>,
+            "max_connections_per_host_local": <int>,
+            "max_connections_per_host_remote": <int>,
+            "min_simultaneous_requests_local": <int>,
+            "min_simultaneous_requests_remote": <int>,
+            "max_simultaneous_requests_local": <int>,
+            "max_simultaneous_requests_remote": <int>
+        },
+        
+        "socket": {
+            "connect_timeout_millis": <int>,
+            "read_timeout_millis": <int>,
+            "keep_alive": <boolean>,
+            "reuse_address": <boolean>,
+            "receive_buffer_size": <int>,
+            "send_buffer_size": <int>,
+            "so_linger": <int>,
+            "tcp_no_delay": <boolean>
+        }
+    }
+```
+
+* `seeds` - an array of string seed IP or host names.  At least one seed must be provided.
+* `lb_policy_name` - (optional) the load balancing policy name.  The following values are accepted:
+    * "DCAwareRoundRobinPolicy" - requires string field `local_dc` and optional numeric field `used_hosts_per_remote_dc`
+    * Any FQCN such of a class that implements `LoadBalancingPolicy`
+* `reconnect_policy_name` - (optional) the reconnect policy name.  The following values are accepted:
+    * "constant"|"ConstantReconnectionPolicy" - creates a `ConstantReconnectionPolicy` policy.  Expects additional numeric       field `delay` in ms.
+    * "exponential"|"ExponentialReconnectionPolicy" - creates an `ExponentialReconnectionPolicy` policy.  Expects               additional numeric fields `base_delay` and `max_delay` in ms.
+
+Refer to the [Cassandra Java driver documentation](http://www.datastax.com/documentation/developer/java-driver/2.0/index.html) for a description of the remaining configuration options.
+
+
+A sample config looks like:
+
+```json
     "cassandra": {
         "seeds": ["10.0.0.1", "10.0.0.2"],
         
@@ -12,33 +63,15 @@ The main configuration is via the normal config.json file for a Vert.x module. A
                 "name": "DCAwareRoundRobinPolicy",
                 "local_dc": "LOCAL1",
                 "used_hosts_per_remote_dc": 1
+            },
+            "reconnect": {
+                "name": "exponential",
+                "base_delay": 1000,
+                "max_delay": 10000
             }
         },
-        
-        "pooling": {
-            "core_connections_per_host_local": 1,
-            "core_connections_per_host_remote": 1,
-            "max_connections_per_host_local": 10,
-            "max_connections_per_host_remote": 10,
-            "min_simultaneous_requests_local": 1,
-            "min_simultaneous_requests_remote": 1,
-            "max_simultaneous_requests_local": 3,
-            "max_simultaneous_requests_remote": 3
-        },
-        
-        "socket": {
-            "connect_timeout_millis": 30000,
-            "read_timeout_millis": 12000,
-            "keep_alive": true,
-            "reuse_address": false,
-            "receive_buffer_size": 30000,
-            "send_buffer_size": 30000,
-            "so_linger": 100,
-            "tcp_no_delay": true
-        }
     }
-
-Please refer to the [Cassandra Java driver documentation](http://www.datastax.com/documentation/developer/java-driver/2.0/java-driver/whatsNew2.html) for a description of what these configuration options do.
+```
 
 ### Overriding with Environment Variables
 It is possible to override the seeds and policies section of the configuration using environment variables. The two environment variables are:
