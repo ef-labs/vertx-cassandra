@@ -53,6 +53,10 @@ public class JsonCassandraConfiguratorTest {
         }
 
         @Override
+        public void onSuspected(Host host) {
+        }
+
+        @Override
         public void onDown(Host host) {
         }
 

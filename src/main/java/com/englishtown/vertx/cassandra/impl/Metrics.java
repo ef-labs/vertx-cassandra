@@ -259,6 +259,10 @@ class Metrics implements AutoCloseable {
             downHosts.remove(key);
         }
 
+        @Override
+        public void onSuspected(Host host) {
+        }
+
         /**
          * Called when a node is determined to be down.
          *

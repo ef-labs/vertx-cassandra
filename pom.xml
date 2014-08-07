@@ -12,8 +12,9 @@
     </parent>
 
     <properties>
-        <cassandra.driver.version>2.0.2</cassandra.driver.version>
-        <vertx.mod.hk2.version>1.6.0</vertx.mod.hk2.version>
+        <vertx.version>2.1.2</vertx.version>
+        <cassandra.driver.version>2.0.4</cassandra.driver.version>
+        <vertx.mod.hk2.version>1.7.0</vertx.mod.hk2.version>
         <mockito.version>1.9.5</mockito.version>
         <when.version>2.0.0</when.version>
     </properties>
