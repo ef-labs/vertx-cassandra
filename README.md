@@ -5,6 +5,7 @@ Non-runnable module that provides functionality for talking to Cassandra.
 The main configuration is via the normal config.json file for a Vert.x module. 
 
 ```json
+{
     "cassandra": {
         "seeds": [<seeds>],
         
@@ -39,6 +40,7 @@ The main configuration is via the normal config.json file for a Vert.x module.
             "tcp_no_delay": <boolean>
         }
     }
+}
 ```
 
 * `seeds` - an array of string seed IP or host names.  At least one seed must be provided.
@@ -55,6 +57,7 @@ Refer to the [Cassandra Java driver documentation](http://www.datastax.com/docum
 A sample config looks like:
 
 ```json
+{
     "cassandra": {
         "seeds": ["10.0.0.1", "10.0.0.2"],
         
@@ -71,6 +74,7 @@ A sample config looks like:
             }
         },
     }
+}
 ```
 
 ### Overriding with Environment Variables
