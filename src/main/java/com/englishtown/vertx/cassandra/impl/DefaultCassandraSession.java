@@ -9,6 +9,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -26,6 +28,7 @@ public class DefaultCassandraSession implements CassandraSession {
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
 
+    private final Logger logger = LoggerFactory.getLogger(DefaultCassandraSession.class);
 
     @Inject
     public DefaultCassandraSession(Cluster.Builder clusterBuilder, CassandraConfigurator configurator, Vertx vertx) {
@@ -56,6 +59,9 @@ public class DefaultCassandraSession implements CassandraSession {
         // Add policies to cluster builder
         if (configurator.getLoadBalancingPolicy() != null) {
             clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
+        }
+        if (configurator.getReconnectionPolicy() != null) {
+            clusterBuilder.withReconnectionPolicy(configurator.getReconnectionPolicy());
         }
 
         // Add pooling options to cluster builder
@@ -153,6 +159,7 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public void reconnect() {
+        logger.debug("Call to reconnect the session has been made");
         Session oldSession = session;
         session = cluster.connect();
         if (oldSession != null) {
@@ -163,6 +170,7 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public void close() {
+        logger.debug("Call to close the session has been made");
         if (metrics != null) {
             metrics.close();
             metrics = null;

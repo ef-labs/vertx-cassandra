@@ -2,9 +2,9 @@ package com.englishtown.vertx.cassandra.impl;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.platform.Container;
 
 import javax.inject.Inject;
@@ -39,7 +39,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
             logger.debug("No environment configuration for seeds found, so falling back to JSON configuration.");
             super.initSeeds(config);
         } else {
-            logger.debug("Using environment configuration of ", envVarSeeds);
+            logger.debug("Using environment configuration of " + envVarSeeds);
             String[] seedsArray = envVarSeeds.split("\\|");
             seeds = ImmutableList.copyOf(seedsArray);
         }
@@ -55,7 +55,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
             logger.debug("No environment configuration found for local DC, so falling back on JSON configuration.");
             super.initPolicies(config);
         } else {
-            logger.debug("Using environment config for Local DC of ", envVarLocalDC);
+            logger.debug("Using environment config for Local DC of " + envVarLocalDC);
 
             // We take the current config, remove any local dc configuration and replace it with our environment var version
             JsonObject policies = config.getObject("policies");

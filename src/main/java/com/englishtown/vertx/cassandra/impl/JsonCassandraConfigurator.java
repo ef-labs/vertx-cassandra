@@ -1,8 +1,7 @@
 package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -21,6 +20,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected List<String> seeds;
     protected LoadBalancingPolicy loadBalancingPolicy;
+    protected ReconnectionPolicy reconnectionPolicy;
     protected PoolingOptions poolingOptions;
     protected SocketOptions socketOptions;
     protected QueryOptions queryOptions;
@@ -57,6 +57,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     @Override
     public LoadBalancingPolicy getLoadBalancingPolicy() {
         return loadBalancingPolicy;
+    }
+
+    @Override
+    public ReconnectionPolicy getReconnectionPolicy() {
+        return reconnectionPolicy;
     }
 
     @Override
@@ -112,45 +117,108 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
             return;
         }
 
+        initLoadBalancingPolicy(policyConfig);
+        initReconnectionPolicy(policyConfig);
+    }
+
+    protected void initLoadBalancingPolicy(JsonObject policyConfig) {
+
         JsonObject loadBalancing = policyConfig.getObject("load_balancing");
-        if (loadBalancing != null) {
-            String name = loadBalancing.getString("name");
 
-            if (name == null || name.isEmpty()) {
-                throw new IllegalArgumentException("A load balancing policy must have a class name field");
+        if (loadBalancing == null) {
+            return;
+        }
 
-            } else if ("DCAwareRoundRobinPolicy".equalsIgnoreCase(name)
-                    || "com.datastax.driver.core.policies.DCAwareRoundRobinPolicy".equalsIgnoreCase(name)) {
+        String name = loadBalancing.getString("name");
 
-                String localDc = loadBalancing.getString("local_dc");
-                int usedHostsPerRemoteDc = loadBalancing.getInteger("used_hosts_per_remote_dc", 0);
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("A load balancing policy must have a class name field");
 
-                if (localDc == null || localDc.isEmpty()) {
-                    throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
-                }
+        } else if ("DCAwareRoundRobinPolicy".equalsIgnoreCase(name)
+                || "com.datastax.driver.core.policies.DCAwareRoundRobinPolicy".equalsIgnoreCase(name)) {
 
-                loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDc, usedHostsPerRemoteDc);
+            String localDc = loadBalancing.getString("local_dc");
+            int usedHostsPerRemoteDc = loadBalancing.getInteger("used_hosts_per_remote_dc", 0);
 
-            } else {
+            if (localDc == null || localDc.isEmpty()) {
+                throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
+            }
 
-                Class<?> clazz;
+            loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDc, usedHostsPerRemoteDc);
+
+        } else {
+
+            Class<?> clazz;
+            try {
+                clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            if (LoadBalancingPolicy.class.isAssignableFrom(clazz)) {
                 try {
-                    clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
-                } catch (ClassNotFoundException e) {
+                    loadBalancingPolicy = (LoadBalancingPolicy) clazz.newInstance();
+                } catch (IllegalAccessException | InstantiationException e) {
                     throw new RuntimeException(e);
                 }
-                if (LoadBalancingPolicy.class.isAssignableFrom(clazz)) {
-                    try {
-                        loadBalancingPolicy = (LoadBalancingPolicy) clazz.newInstance();
-                    } catch (IllegalAccessException | InstantiationException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Class " + name + " does not implement LoadBalancingPolicy");
-                }
+            } else {
+                throw new IllegalArgumentException("Class " + name + " does not implement LoadBalancingPolicy");
+            }
 
+        }
+
+    }
+
+    protected void initReconnectionPolicy(JsonObject policyConfig) {
+
+        JsonObject reconnection = policyConfig.getObject("reconnection");
+
+        if (reconnection == null) {
+            return;
+        }
+
+        String name = reconnection.getString("name");
+
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("A reconnection policy must have a class name field");
+
+        } else if ("ConstantReconnectionPolicy".equalsIgnoreCase(name) || "constant".equalsIgnoreCase(name)) {
+            Integer delay = reconnection.getInteger("delay");
+
+            if (delay == null) {
+                throw new IllegalArgumentException("ConstantReconnectionPolicy requires a delay in configuration");
+            }
+
+            reconnectionPolicy = new ConstantReconnectionPolicy(delay.intValue());
+
+        } else if ("ExponentialReconnectionPolicy".equalsIgnoreCase(name) || "exponential".equalsIgnoreCase(name)) {
+            Long baseDelay = reconnection.getLong("base_delay");
+            Long maxDelay = reconnection.getLong("max_delay");
+
+            if (baseDelay == null && maxDelay == null) {
+                throw new IllegalArgumentException("ExponentialReconnectionPolicy requires base_delay and max_delay in configuration");
+            }
+
+            reconnectionPolicy = new ExponentialReconnectionPolicy(baseDelay.longValue(), maxDelay.longValue());
+
+        } else {
+            Class<?> clazz;
+            try {
+                clazz = Thread.currentThread().getContextClassLoader().loadClass(name);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (!ReconnectionPolicy.class.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException("Class " + name + " does not implement ReconnectionPolicy");
+            }
+
+            try {
+                reconnectionPolicy = (ReconnectionPolicy) clazz.newInstance();
+            } catch (IllegalAccessException | InstantiationException e) {
+                throw new RuntimeException(e);
             }
         }
+
     }
 
     protected void initPoolingOptions(JsonObject config) {
