@@ -26,19 +26,21 @@ public interface CassandraSession extends AutoCloseable {
 
     /**
      * Executes a cassandra statement synchronously
-     * <p/>
+     * <p>
      * Use with caution as this will block!
      *
      * @param statement the statement to execute
+     * @return executed result set
      */
     ResultSet execute(Statement statement);
 
     /**
      * Executes a cassandra CQL query synchronously
-     * <p/>
+     * <p>
      * Use with caution as this will block!
      *
      * @param query the CQL query to execute
+     * @return executed result set
      */
     ResultSet execute(String query);
 
@@ -60,7 +62,7 @@ public interface CassandraSession extends AutoCloseable {
 
     /**
      * Prepares the provided query statement
-     * <p/>
+     * <p>
      * Use with caution as this will block!
      *
      * @param statement the query statement to prepare
@@ -70,7 +72,7 @@ public interface CassandraSession extends AutoCloseable {
 
     /**
      * Prepares the provided query
-     * <p/>
+     * <p>
      * Use with caution as this will block!
      *
      * @param query the query to prepare
