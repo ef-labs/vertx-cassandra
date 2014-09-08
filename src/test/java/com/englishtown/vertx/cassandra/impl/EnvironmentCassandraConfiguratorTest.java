@@ -1,5 +1,7 @@
 package com.englishtown.vertx.cassandra.impl;
 
+import com.datastax.driver.core.AuthProvider;
+import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.junit.Before;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
@@ -71,5 +74,25 @@ public class EnvironmentCassandraConfiguratorTest {
         LoadBalancingPolicy loadBalancingPolicy = configurator.getLoadBalancingPolicy();
 
         assertTrue(loadBalancingPolicy instanceof DCAwareRoundRobinPolicy);
+    }
+
+    @Test
+    public void testInitAuthProvider() throws Exception {
+
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        AuthProvider authProvider = configurator.getAuthProvider();
+
+        assertNull(authProvider);
+
+        String username = "test";
+        String password = "test_password";
+        env.put(EnvironmentCassandraConfigurator.ENV_VAR_USERNAME, username);
+        env.put(EnvironmentCassandraConfigurator.ENV_VAR_PASSWORD, password);
+
+        configurator = new EnvironmentCassandraConfigurator(config, container);
+        authProvider = configurator.getAuthProvider();
+
+        assertThat(authProvider, instanceOf(PlainTextAuthProvider.class));
+
     }
 }

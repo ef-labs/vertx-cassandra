@@ -16,14 +16,7 @@ public class CassandraSessionIntegrationTest extends IntegrationTestBase {
     @Test
     public void testExecute() throws Exception {
 
-        createKeyspace();
-
-        Statement create = TableBuilder.create(keyspace, "test")
-                .column("id", "text")
-                .column("value", "text")
-                .primaryKey("id");
-
-        session.execute(create);
+        session.execute(createTestTableStatement);
 
         RegularStatement statement = QueryBuilder
                 .select()
@@ -43,7 +36,7 @@ public class CassandraSessionIntegrationTest extends IntegrationTestBase {
 
         final Context context = vertx.currentContext();
 
-        session.executeAsync(createKeyspaceStatement, new FutureCallback<ResultSet>() {
+        session.executeAsync(createTestTableStatement, new FutureCallback<ResultSet>() {
             @Override
             public void onSuccess(ResultSet result) {
                 // Make sure we're on the right context

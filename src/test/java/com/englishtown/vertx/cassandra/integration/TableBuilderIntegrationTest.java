@@ -89,11 +89,4 @@ public class TableBuilderIntegrationTest extends IntegrationTestBase {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void setUp() {
-        createKeyspace();
-    }
 }

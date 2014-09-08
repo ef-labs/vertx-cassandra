@@ -346,4 +346,64 @@ public class JsonCassandraConfiguratorTest {
 
     }
 
+    @Test
+    public void testInitAuthProvider() throws Exception {
+
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        AuthProvider authProvider = configurator.getAuthProvider();
+
+        assertNull(authProvider);
+
+        String username = "test";
+        String password = "test_password";
+        JsonObject auth = new JsonObject()
+                .putString("username", username)
+                .putString("password", password);
+
+        config.putObject("auth", auth);
+
+        configurator = new EnvironmentCassandraConfigurator(config, container);
+        authProvider = configurator.getAuthProvider();
+
+        assertThat(authProvider, instanceOf(PlainTextAuthProvider.class));
+
+    }
+
+    @Test
+    public void testInitAuthProvider_fail() throws Exception {
+
+        String username = "test";
+        String password = "test_password";
+
+        JsonObject auth = new JsonObject();
+        config.putObject("auth", auth);
+
+        try {
+            new EnvironmentCassandraConfigurator(config, container);
+            fail("Expected error for missing username/password");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        auth.putString("username", username);
+
+        try {
+            new EnvironmentCassandraConfigurator(config, container);
+            fail("Expected error for missing username/password");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        auth.removeField("username");
+        auth.putString("password", password);
+
+        try {
+            new EnvironmentCassandraConfigurator(config, container);
+            fail("Expected error for missing username/password");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+    }
+
 }

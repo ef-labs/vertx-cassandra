@@ -1,6 +1,7 @@
 package com.englishtown.vertx.cassandra.integration;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
@@ -8,15 +9,13 @@ import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.englishtown.vertx.cassandra.keyspacebuilder.KeyspaceBuilder;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.englishtown.vertx.cassandra.promises.impl.DefaultWhenCassandraSession;
+import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
+import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
-import org.vertx.testtools.VertxAssert;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Cassandra base integration test class
@@ -26,7 +25,7 @@ public abstract class IntegrationTestBase extends TestVerticle {
     protected CassandraSession session;
     protected WhenCassandraSession whenSession;
     protected String keyspace;
-    protected Statement createKeyspaceStatement;
+    protected CreateTable createTestTableStatement;
 
     public static final String TEST_CONFIG_FILE = "test_config.json";
     public static final String TEST_KEYSPACE_BASE = "test_vertx_mod_cass_";
@@ -37,8 +36,8 @@ public abstract class IntegrationTestBase extends TestVerticle {
         // Load the test config file, if we have one
         JsonObject config = loadConfig();
 
-        String dateTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        keyspace = TEST_KEYSPACE_BASE + dateTime;
+//        String dateTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        keyspace = TEST_KEYSPACE_BASE + "1"; //dateTime;
 
         final Cluster.Builder builder = new Cluster.Builder();
 
@@ -47,25 +46,20 @@ public abstract class IntegrationTestBase extends TestVerticle {
         whenSession = new DefaultWhenCassandraSession(session);
 
         Metadata metadata = session.getMetadata();
-        if (metadata.getKeyspace(keyspace) != null) {
-            session.execute(KeyspaceBuilder.drop(keyspace).ifExists());
-        }
-
-        // Find out which node is closest and use that for the networktopologystrategy
-        for (Host host : metadata.getAllHosts()) {
-            if (session.getCluster().getConfiguration().getPolicies().getLoadBalancingPolicy().distance(host) == HostDistance.LOCAL) {
-                createKeyspaceStatement = KeyspaceBuilder.create(keyspace)
-                        .networkTopologyStrategy()
-                        .dc(host.getDatacenter(), 1);
-                break;
+        KeyspaceMetadata keyspaceMetadata = metadata.getKeyspace(keyspace);
+        if (keyspaceMetadata != null) {
+            for (TableMetadata tableMetadata : keyspaceMetadata.getTables()) {
+                session.execute(TableBuilder.drop(keyspace, tableMetadata.getName()).ifExists());
             }
+        } else {
+            createKeyspace(metadata, startedResult);
         }
 
-        if (createKeyspaceStatement == null) {
-            startedResult.setFailure(new Throwable("Could not find a local host for the test"));
-
-            return;
-        }
+        createTestTableStatement = TableBuilder.create(keyspace, "test")
+                .ifNotExists()
+                .column("id", "text")
+                .column("value", "text")
+                .primaryKey("id");
 
         setUp();
         startedResult.setResult(null);
@@ -78,13 +72,29 @@ public abstract class IntegrationTestBase extends TestVerticle {
     protected void setUp() {
     }
 
-    protected void createKeyspace() {
-        ResultSet rs = session.execute(createKeyspaceStatement);
-        VertxAssert.assertNotNull(rs);
-    }
+    private void createKeyspace(Metadata metadata, Future<Void> startedResult) {
 
-    protected void dropKeyspace() {
-        session.execute(KeyspaceBuilder.drop(keyspace).ifExists());
+        Statement createKeyspaceStatement = null;
+
+        // Find out which node is closest and use that for the networktopologystrategy
+        LoadBalancingPolicy lbPolicy = session.getCluster().getConfiguration().getPolicies().getLoadBalancingPolicy();
+        for (Host host : metadata.getAllHosts()) {
+            if (lbPolicy.distance(host) == HostDistance.LOCAL) {
+                createKeyspaceStatement = KeyspaceBuilder.create(keyspace)
+                        .ifNotExists()
+                        .networkTopologyStrategy()
+                        .dc(host.getDatacenter(), 1);
+                break;
+            }
+        }
+
+        if (createKeyspaceStatement == null) {
+            startedResult.setFailure(new Throwable("Could not find a local host for the test"));
+            return;
+        }
+
+        session.execute(createKeyspaceStatement);
+
     }
 
     private JsonObject loadConfig() {
@@ -103,7 +113,6 @@ public abstract class IntegrationTestBase extends TestVerticle {
     public void stop() {
         try {
             if (session != null) {
-                dropKeyspace();
                 session.close();
             }
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.impl;
 
+import com.datastax.driver.core.PlainTextAuthProvider;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import org.vertx.java.core.json.JsonObject;
@@ -17,6 +18,8 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     // The environment variable that contains the pipe delimited list of seeds
     public static final String ENV_VAR_SEEDS = "CASSANDRA_SEEDS";
     public static final String ENV_VAR_LOCAL_DC = "CASSANDRA_LOCAL_DC";
+    public static final String ENV_VAR_USERNAME = "CASSANDRA_USERNAME";
+    public static final String ENV_VAR_PASSWORD = "CASSANDRA_PASSWORD";
 
     public static final Logger logger = LoggerFactory.getLogger(EnvironmentCassandraConfigurator.class);
 
@@ -71,5 +74,19 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
 
             super.initPolicies(config);
         }
+    }
+
+    @Override
+    protected void initAuthProvider(JsonObject config) {
+
+        String username = container.env().get(ENV_VAR_USERNAME);
+        String password = container.env().get(ENV_VAR_PASSWORD);
+
+        if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
+            authProvider = new PlainTextAuthProvider(username, password);
+        } else {
+            super.initAuthProvider(config);
+        }
+
     }
 }
