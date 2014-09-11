@@ -17,7 +17,7 @@
         <vertx.mod.hk2.version>1.7.0</vertx.mod.hk2.version>
         <vertx.mod.guice.version>1.3.0-final</vertx.mod.guice.version>
         <mockito.version>1.9.5</mockito.version>
-        <when.version>2.0.0</when.version>
+        <when.version>3.0.0-RC1</when.version>
     </properties>
 
     <dependencies>
@@ -61,6 +61,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>

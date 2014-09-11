@@ -16,12 +16,12 @@ import javax.inject.Inject;
 public class DefaultWhenCassandraSession implements WhenCassandraSession {
 
     private final CassandraSession session;
-    private final When<ResultSet> resultSetWhen = new When<>();
-    private final When<PreparedStatement> preparedStatementWhen = new When<>();
+    private final When when;
 
     @Inject
-    public DefaultWhenCassandraSession(CassandraSession session) {
+    public DefaultWhenCassandraSession(CassandraSession session, When when) {
         this.session = session;
+        this.when = when;
     }
 
     /**
@@ -33,17 +33,17 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     @Override
 
     public Promise<ResultSet> executeAsync(Statement statement) {
-        final Deferred<ResultSet> d = resultSetWhen.defer();
+        final Deferred<ResultSet> d = when.defer();
 
         session.executeAsync(statement, new FutureCallback<ResultSet>() {
             @Override
             public void onSuccess(ResultSet result) {
-                d.getResolver().resolve(result);
+                d.resolve(result);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                d.getResolver().reject(t);
+                d.reject(t);
             }
         });
 
@@ -58,17 +58,17 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<ResultSet> executeAsync(String query) {
-        final Deferred<ResultSet> d = resultSetWhen.defer();
+        final Deferred<ResultSet> d = when.defer();
 
         session.executeAsync(query, new FutureCallback<ResultSet>() {
             @Override
             public void onSuccess(ResultSet result) {
-                d.getResolver().resolve(result);
+                d.resolve(result);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                d.getResolver().reject(t);
+                d.reject(t);
             }
         });
 
@@ -83,17 +83,17 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<PreparedStatement> prepareAsync(RegularStatement statement) {
-        final Deferred<PreparedStatement> d = preparedStatementWhen.defer();
+        final Deferred<PreparedStatement> d = when.defer();
 
         session.prepareAsync(statement, new FutureCallback<PreparedStatement>() {
             @Override
             public void onSuccess(PreparedStatement result) {
-                d.getResolver().resolve(result);
+                d.resolve(result);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                d.getResolver().reject(t);
+                d.reject(t);
             }
         });
 
@@ -108,17 +108,17 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<PreparedStatement> prepareAsync(String query) {
-        final Deferred<PreparedStatement> d = preparedStatementWhen.defer();
+        final Deferred<PreparedStatement> d = when.defer();
 
         session.prepareAsync(query, new FutureCallback<PreparedStatement>() {
             @Override
             public void onSuccess(PreparedStatement result) {
-                d.getResolver().resolve(result);
+                d.resolve(result);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                d.getResolver().reject(t);
+                d.reject(t);
             }
         });
 

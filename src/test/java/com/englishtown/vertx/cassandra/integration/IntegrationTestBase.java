@@ -2,6 +2,8 @@ package com.englishtown.vertx.cassandra.integration;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.englishtown.promises.When;
+import com.englishtown.promises.WhenFactory;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
@@ -26,6 +28,7 @@ public abstract class IntegrationTestBase extends TestVerticle {
     protected WhenCassandraSession whenSession;
     protected String keyspace;
     protected CreateTable createTestTableStatement;
+    protected When when;
 
     public static final String TEST_CONFIG_FILE = "test_config.json";
     public static final String TEST_KEYSPACE_BASE = "test_vertx_mod_cass_";
@@ -43,7 +46,8 @@ public abstract class IntegrationTestBase extends TestVerticle {
 
         CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
         session = new DefaultCassandraSession(builder, configurator, vertx);
-        whenSession = new DefaultWhenCassandraSession(session);
+        when = WhenFactory.createSync();
+        whenSession = new DefaultWhenCassandraSession(session, when);
 
         Metadata metadata = session.getMetadata();
         KeyspaceMetadata keyspaceMetadata = metadata.getKeyspace(keyspace);
