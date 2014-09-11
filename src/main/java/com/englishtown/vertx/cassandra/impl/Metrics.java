@@ -235,7 +235,7 @@ class Metrics implements AutoCloseable {
 
         /**
          * Called when a new node is added to the cluster.
-         * <p/>
+         * <p>
          * The newly added node should be considered up.
          *
          * @param host the host that has been newly added.

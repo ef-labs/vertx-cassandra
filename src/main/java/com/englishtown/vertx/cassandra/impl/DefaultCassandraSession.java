@@ -84,6 +84,10 @@ public class DefaultCassandraSession implements CassandraSession {
             }
         }
 
+        if (configurator.getAuthProvider() != null) {
+            clusterBuilder.withAuthProvider(configurator.getAuthProvider());
+        }
+
         // Build cluster and connect
         cluster = clusterBuilder.build();
         reconnect();

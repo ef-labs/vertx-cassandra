@@ -38,7 +38,7 @@ public final class TableBuilder {
 
     /**
      * Returns a {@link com.datastax.driver.core.BatchStatement} with all the alter statements necessary to modify an existing table.
-     * <p/>
+     * <p>
      * Note: Columns will only be added or modified, not dropped.
      *
      * @param existing the existing table to be modified

@@ -36,8 +36,16 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues() {
+    public ByteBuffer[] getValues(int i) {
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasValues() {
+        return false;
     }
 
     /**

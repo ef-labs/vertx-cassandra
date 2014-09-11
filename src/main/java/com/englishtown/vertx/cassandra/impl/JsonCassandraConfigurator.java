@@ -3,6 +3,7 @@ package com.englishtown.vertx.cassandra.impl;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
+import com.google.common.base.Strings;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
@@ -25,6 +26,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected SocketOptions socketOptions;
     protected QueryOptions queryOptions;
     protected MetricsOptions metricsOptions;
+    protected AuthProvider authProvider;
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
@@ -75,6 +77,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     @Override
+    public AuthProvider getAuthProvider() {
+        return authProvider;
+    }
+
+    @Override
     public PoolingOptions getPoolingOptions() {
         return poolingOptions;
     }
@@ -92,6 +99,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         initSocketOptions(config);
         initQueryOptions(config);
         initMetricsOptions(config);
+        initAuthProvider(config);
 
     }
 
@@ -373,6 +381,28 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         boolean jmx_enabled = metrics.getBoolean("jmx_enabled", true);
         metricsOptions = new MetricsOptions(jmx_enabled);
+
+    }
+
+    protected void initAuthProvider(JsonObject config) {
+
+        JsonObject auth = config.getObject("auth");
+
+        if (auth == null) {
+            return;
+        }
+
+        String username = auth.getString("username");
+        String password = auth.getString("password");
+
+        if (Strings.isNullOrEmpty(username)) {
+            throw new IllegalArgumentException("A username field must be provided on an auth field.");
+        }
+        if (Strings.isNullOrEmpty(password)) {
+            throw new IllegalArgumentException("A password field must be provided on an auth field.");
+        }
+
+        authProvider = new PlainTextAuthProvider(username, password);
 
     }
 
