@@ -20,68 +20,48 @@ public class WhenCassandraSessionIntegrationTest extends IntegrationTestBase {
 
         final Context context = vertx.currentContext();
 
-        final WhenCassandraSession whenSession = new DefaultWhenCassandraSession(session);
+        final WhenCassandraSession whenSession = new DefaultWhenCassandraSession(session, when);
         Promise<ResultSet> promise = whenSession.executeAsync(createTestTableStatement);
-        final When<ResultSet> when = new When<>();
 
         promise.then(
-                new FulfilledRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(ResultSet value) {
-                        // Make sure we're on the right context
-                        VertxAssert.assertEquals(context, vertx.currentContext());
-                        VertxAssert.assertNotNull(value);
+                value -> {
+                    // Make sure we're on the right context
+                    VertxAssert.assertEquals(context, vertx.currentContext());
+                    VertxAssert.assertNotNull(value);
 
-                        Statement statement = TableBuilder.create(keyspace, "test")
-                                .column("id", "text")
-                                .primaryKey("id");
+                    Statement statement = TableBuilder.create(keyspace, "test")
+                            .column("id", "text")
+                            .primaryKey("id");
 
-                        // This promise will reject
-                        return whenSession.executeAsync(statement);
-                    }
+                    // This promise will reject
+                    return whenSession.executeAsync(statement);
                 },
-                new RejectedRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(Value<ResultSet> value) {
-                        VertxAssert.handleThrowable(value.getCause());
-                        VertxAssert.fail();
-                        return null;
-                    }
+                value -> {
+                    VertxAssert.handleThrowable(value);
+                    VertxAssert.fail();
+                    return null;
                 }
         ).then(
-                new FulfilledRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(ResultSet value) {
-                        // Should have reject, keyspace already exists
-                        VertxAssert.fail();
-                        return null;
-                    }
+                value -> {
+                    // Should have reject, keyspace already exists
+                    VertxAssert.fail();
+                    return null;
                 },
-                new RejectedRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(Value<ResultSet> value) {
-                        // Make sure we're on the right context
-                        VertxAssert.assertEquals(context, vertx.currentContext());
-                        VertxAssert.assertNotNull(value);
-                        VertxAssert.assertNotNull(value.getCause());
-                        return null;
-                    }
+                value -> {
+                    // Make sure we're on the right context
+                    VertxAssert.assertEquals(context, vertx.currentContext());
+                    VertxAssert.assertNotNull(value);
+                    return null;
                 }
         ).then(
-                new FulfilledRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(ResultSet value) {
-                        VertxAssert.testComplete();
-                        return null;
-                    }
+                value -> {
+                    VertxAssert.testComplete();
+                    return null;
                 },
-                new RejectedRunnable<ResultSet>() {
-                    @Override
-                    public Promise<ResultSet> run(Value<ResultSet> value) {
-                        VertxAssert.handleThrowable(value.getCause());
-                        VertxAssert.fail();
-                        return null;
-                    }
+                value -> {
+                    VertxAssert.handleThrowable(value);
+                    VertxAssert.fail();
+                    return null;
                 }
         );
 
