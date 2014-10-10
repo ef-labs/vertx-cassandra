@@ -4,6 +4,9 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.base.Strings;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
@@ -29,6 +32,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected AuthProvider authProvider;
 
     public static final String CONFIG_SEEDS = "seeds";
+    public static final String CONFIG_POLICIES = "policies";
+    public static final String CONFIG_POOLING = "pooling";
+    public static final String CONFIG_SOCKET = "socket";
+    public static final String CONFIG_METRICS = "metrics";
+    public static final String CONFIG_AUTH = "auth";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
 
     public static final String CONSISTENCY_ANY = "ANY";
@@ -82,6 +90,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     }
 
     @Override
+    public void onReady(Handler<AsyncResult<Void>> callback) {
+        callback.handle(new DefaultFutureResult<>((Void) null));
+    }
+
+    @Override
     public PoolingOptions getPoolingOptions() {
         return poolingOptions;
     }
@@ -93,20 +106,19 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected void init(JsonObject config) {
 
-        initSeeds(config);
-        initPolicies(config);
-        initPoolingOptions(config);
-        initSocketOptions(config);
+        initSeeds(config.getArray(CONFIG_SEEDS));
+        initPolicies(config.getObject(CONFIG_POLICIES));
+        initPoolingOptions(config.getObject(CONFIG_POOLING));
+        initSocketOptions(config.getObject(CONFIG_SOCKET));
         initQueryOptions(config);
-        initMetricsOptions(config);
-        initAuthProvider(config);
+        initMetricsOptions(config.getObject(CONFIG_METRICS));
+        initAuthProvider(config.getObject(CONFIG_AUTH));
 
     }
 
-    protected void initSeeds(JsonObject config) {
+    protected void initSeeds(JsonArray seeds) {
 
         // Get array of IPs, default to localhost
-        JsonArray seeds = config.getArray(CONFIG_SEEDS);
         if (seeds == null || seeds.size() == 0) {
             seeds = new JsonArray().addString("127.0.0.1");
         }
@@ -117,21 +129,17 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
     }
 
-    protected void initPolicies(JsonObject config) {
-
-        JsonObject policyConfig = config.getObject("policies");
+    protected void initPolicies(JsonObject policyConfig) {
 
         if (policyConfig == null) {
             return;
         }
 
-        initLoadBalancingPolicy(policyConfig);
-        initReconnectionPolicy(policyConfig);
+        initLoadBalancingPolicy(policyConfig.getObject("load_balancing"));
+        initReconnectionPolicy(policyConfig.getObject("reconnection"));
     }
 
-    protected void initLoadBalancingPolicy(JsonObject policyConfig) {
-
-        JsonObject loadBalancing = policyConfig.getObject("load_balancing");
+    protected void initLoadBalancingPolicy(JsonObject loadBalancing) {
 
         if (loadBalancing == null) {
             return;
@@ -176,9 +184,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected void initReconnectionPolicy(JsonObject policyConfig) {
-
-        JsonObject reconnection = policyConfig.getObject("reconnection");
+    protected void initReconnectionPolicy(JsonObject reconnection) {
 
         if (reconnection == null) {
             return;
@@ -229,9 +235,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected void initPoolingOptions(JsonObject config) {
-
-        JsonObject poolingConfig = config.getObject("pooling");
+    protected void initPoolingOptions(JsonObject poolingConfig) {
 
         if (poolingConfig == null) {
             return;
@@ -275,9 +279,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected void initSocketOptions(JsonObject config) {
-
-        JsonObject socketConfig = config.getObject("socket");
+    protected void initSocketOptions(JsonObject socketConfig) {
 
         if (socketConfig == null) {
             return;
@@ -323,7 +325,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected void initQueryOptions(JsonObject config) {
 
-        ConsistencyLevel consistency = getConsistency(config);
+        ConsistencyLevel consistency = getConsistency(config.getString(CONFIG_CONSISTENCY_LEVEL));
 
         if (consistency == null) {
             return;
@@ -333,8 +335,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected ConsistencyLevel getConsistency(JsonObject config) {
-        String consistency = config.getString(CONFIG_CONSISTENCY_LEVEL);
+    protected ConsistencyLevel getConsistency(String consistency) {
 
         if (consistency == null || consistency.isEmpty()) {
             return null;
@@ -371,9 +372,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         throw new IllegalArgumentException("'" + consistency + "' is not a valid consistency level.");
     }
 
-    protected void initMetricsOptions(JsonObject config) {
-
-        JsonObject metrics = config.getObject("metrics");
+    protected void initMetricsOptions(JsonObject metrics) {
 
         if (metrics == null) {
             return;
@@ -384,9 +383,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected void initAuthProvider(JsonObject config) {
-
-        JsonObject auth = config.getObject("auth");
+    protected void initAuthProvider(JsonObject auth) {
 
         if (auth == null) {
             return;

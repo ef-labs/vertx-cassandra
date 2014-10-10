@@ -13,9 +13,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.DefaultFutureResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,6 +68,8 @@ public class DefaultCassandraSessionTest {
     ArgumentCaptor<Runnable> runnableCaptor;
     @Captor
     ArgumentCaptor<Handler<Void>> handlerCaptor;
+    @Captor
+    ArgumentCaptor<Handler<AsyncResult<Void>>> onReadyCaptor;
 
     public static class TestLoadBalancingPolicy implements LoadBalancingPolicy {
         @Override
@@ -124,6 +128,8 @@ public class DefaultCassandraSessionTest {
 
         cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
 
+        verify(configurator).onReady(onReadyCaptor.capture());
+        onReadyCaptor.getValue().handle(new DefaultFutureResult<>((Void) null));
     }
 
     @Test

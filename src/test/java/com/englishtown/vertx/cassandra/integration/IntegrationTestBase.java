@@ -6,6 +6,8 @@ import com.englishtown.promises.When;
 import com.englishtown.promises.WhenFactory;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
+import com.englishtown.vertx.cassandra.hk2.HK2WhenCassandraBinder;
+import com.englishtown.vertx.cassandra.hk2.HK2ZooKeeperCassandraBinder;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.englishtown.vertx.cassandra.keyspacebuilder.KeyspaceBuilder;
@@ -13,10 +15,19 @@ import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.englishtown.vertx.cassandra.promises.impl.DefaultWhenCassandraSession;
 import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
+import com.englishtown.vertx.promises.hk2.HK2WhenBinder;
+import com.englishtown.vertx.zookeeper.hk2.HK2WhenZooKeeperBinder;
+import com.englishtown.vertx.zookeeper.hk2.HK2ZooKeeperBinder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.vertx.java.core.Future;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.platform.Container;
 import org.vertx.testtools.TestVerticle;
 
 /**
@@ -24,6 +35,7 @@ import org.vertx.testtools.TestVerticle;
  */
 public abstract class IntegrationTestBase extends TestVerticle {
 
+    protected ServiceLocator locator;
     protected CassandraSession session;
     protected WhenCassandraSession whenSession;
     protected String keyspace;
@@ -36,38 +48,52 @@ public abstract class IntegrationTestBase extends TestVerticle {
     @Override
     public void start(Future<Void> startedResult) {
 
+        locator = ServiceLocatorFactory.getInstance().create(null);
+        ServiceLocatorUtilities.bind(locator, new HK2WhenBinder(), new HK2WhenCassandraBinder(), new HK2ZooKeeperCassandraBinder(), new HK2WhenZooKeeperBinder(), new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bind(vertx).to(Vertx.class);
+                bind(container).to(Container.class);
+            }
+        });
+
         // Load the test config file, if we have one
         JsonObject config = loadConfig();
+        container.config().mergeIn(config);
 
 //        String dateTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
         keyspace = TEST_KEYSPACE_BASE + "1"; //dateTime;
 
-        final Cluster.Builder builder = new Cluster.Builder();
+        session = locator.getService(CassandraSession.class);
+        when = locator.getService(When.class);
+        whenSession = locator.getService(WhenCassandraSession.class);
 
-        CassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
-        session = new DefaultCassandraSession(builder, configurator, vertx);
-        when = WhenFactory.createSync();
-        whenSession = new DefaultWhenCassandraSession(session, when);
-
-        Metadata metadata = session.getMetadata();
-        KeyspaceMetadata keyspaceMetadata = metadata.getKeyspace(keyspace);
-        if (keyspaceMetadata != null) {
-            for (TableMetadata tableMetadata : keyspaceMetadata.getTables()) {
-                session.execute(TableBuilder.drop(keyspace, tableMetadata.getName()).ifExists());
+        session.onReady(result -> {
+            if (result.failed()) {
+                startedResult.setFailure(result.cause());
+                return;
             }
-        } else {
-            createKeyspace(metadata, startedResult);
-        }
 
-        createTestTableStatement = TableBuilder.create(keyspace, "test")
-                .ifNotExists()
-                .column("id", "text")
-                .column("value", "text")
-                .primaryKey("id");
+            Metadata metadata = session.getMetadata();
+            KeyspaceMetadata keyspaceMetadata = metadata.getKeyspace(keyspace);
+            if (keyspaceMetadata != null) {
+                for (TableMetadata tableMetadata : keyspaceMetadata.getTables()) {
+                    session.execute(TableBuilder.drop(keyspace, tableMetadata.getName()).ifExists());
+                }
+            } else {
+                createKeyspace(metadata, startedResult);
+            }
 
-        setUp();
-        startedResult.setResult(null);
-        start();
+            createTestTableStatement = TableBuilder.create(keyspace, "test")
+                    .ifNotExists()
+                    .column("id", "text")
+                    .column("value", "text")
+                    .primaryKey("id");
+
+            setUp();
+            startedResult.setResult(null);
+            start();
+        });
     }
 
     /**
