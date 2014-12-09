@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
 import java.nio.ByteBuffer;
@@ -36,7 +37,7 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues(int i) {
+    public ByteBuffer[] getValues(ProtocolVersion protocolVersion) {
         return null;
     }
 

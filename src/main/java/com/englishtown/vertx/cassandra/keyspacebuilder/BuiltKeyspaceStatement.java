@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.keyspacebuilder;
 
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
 import java.nio.ByteBuffer;
@@ -34,7 +35,7 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues(int i) {
+    public ByteBuffer[] getValues(ProtocolVersion protocolVersion) {
         return null;
     }
 

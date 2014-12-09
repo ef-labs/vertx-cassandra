@@ -6,13 +6,16 @@ import com.englishtown.vertx.cassandra.CassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,11 +25,13 @@ public class DefaultCassandraSession implements CassandraSession {
 
     private Cluster.Builder clusterBuilder;
     private final Vertx vertx;
+    private List<Handler<AsyncResult<Void>>> onReadyCallbacks = new ArrayList<>();
 
     protected Cluster cluster;
     protected Session session;
     protected Metrics metrics;
     protected CassandraConfigurator configurator;
+    protected AsyncResult<Void> initResult;
 
     private final Logger logger = LoggerFactory.getLogger(DefaultCassandraSession.class);
 
@@ -36,7 +41,14 @@ public class DefaultCassandraSession implements CassandraSession {
         this.configurator = configurator;
         this.vertx = vertx;
         this.metrics = new Metrics(this);
-        init(configurator);
+
+        configurator.onReady(result -> {
+            if (result.failed()) {
+                runOnReadyCallbacks(result);
+                return;
+            }
+            init(configurator);
+        });
     }
 
     CassandraConfigurator getConfigurator() {
@@ -92,11 +104,19 @@ public class DefaultCassandraSession implements CassandraSession {
         cluster = clusterBuilder.build();
         reconnect();
 
+        runOnReadyCallbacks(new DefaultFutureResult<>((Void) null));
+    }
+
+    private void runOnReadyCallbacks(AsyncResult<Void> result) {
+        initResult = result;
+        onReadyCallbacks.forEach(handler -> handler.handle(result));
+        onReadyCallbacks.clear();
     }
 
     @Override
     public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        final ResultSetFuture future = session.executeAsync(statement);
+        checkInitialized();
+        ResultSetFuture future = session.executeAsync(statement);
         Futures.addCallback(future, wrapCallback(callback));
     }
 
@@ -107,6 +127,7 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public ResultSet execute(Statement statement) {
+        checkInitialized();
         return session.execute(statement);
     }
 
@@ -117,23 +138,27 @@ public class DefaultCassandraSession implements CassandraSession {
 
     @Override
     public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
+        checkInitialized();
         ListenableFuture<PreparedStatement> future = session.prepareAsync(statement);
         Futures.addCallback(future, wrapCallback(callback));
     }
 
     @Override
     public void prepareAsync(String query, FutureCallback<PreparedStatement> callback) {
+        checkInitialized();
         ListenableFuture<PreparedStatement> future = session.prepareAsync(query);
         Futures.addCallback(future, wrapCallback(callback));
     }
 
     @Override
     public PreparedStatement prepare(RegularStatement statement) {
+        checkInitialized();
         return session.prepare(statement);
     }
 
     @Override
     public PreparedStatement prepare(String query) {
+        checkInitialized();
         return session.prepare(query);
     }
 
@@ -172,6 +197,30 @@ public class DefaultCassandraSession implements CassandraSession {
         metrics.afterReconnect();
     }
 
+    /**
+     * Flag to indicate if the the session is initialized and ready to use
+     *
+     * @return
+     */
+    @Override
+    public boolean initialized() {
+        return initResult != null;
+    }
+
+    /**
+     * Callback for when the session is initialized and ready
+     *
+     * @param callback
+     */
+    @Override
+    public void onReady(Handler<AsyncResult<Void>> callback) {
+        if (initResult != null) {
+            callback.handle(initResult);
+        } else {
+            onReadyCallbacks.add(callback);
+        }
+    }
+
     @Override
     public void close() {
         logger.debug("Call to close the session has been made");
@@ -194,24 +243,20 @@ public class DefaultCassandraSession implements CassandraSession {
         return new FutureCallback<V>() {
             @Override
             public void onSuccess(final V result) {
-                context.runOnContext(new Handler<Void>() {
-                    @Override
-                    public void handle(Void aVoid) {
-                        callback.onSuccess(result);
-                    }
-                });
+                context.runOnContext(aVoid -> callback.onSuccess(result));
             }
 
             @Override
             public void onFailure(final Throwable t) {
-                context.runOnContext(new Handler<Void>() {
-                    @Override
-                    public void handle(Void aVoid) {
-                        callback.onFailure(t);
-                    }
-                });
+                context.runOnContext(aVoid -> callback.onFailure(t));
             }
         };
+    }
+
+    private void checkInitialized() {
+        if (!initialized()) {
+            throw new IllegalStateException("Cassandra session is not ready for use yet");
+        }
     }
 
 }

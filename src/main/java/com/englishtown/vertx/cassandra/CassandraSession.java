@@ -2,6 +2,8 @@ package com.englishtown.vertx.cassandra;
 
 import com.datastax.driver.core.*;
 import com.google.common.util.concurrent.FutureCallback;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 
 /**
  * Interface that represents a cassandra session
@@ -100,11 +102,25 @@ public interface CassandraSession extends AutoCloseable {
      *
      * @return the {@code Cluster} object this session is part of.
      */
-    public Cluster getCluster();
+    Cluster getCluster();
 
     /**
      * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
      */
-    public void reconnect();
+    void reconnect();
+
+    /**
+     * Flag to indicate if the the session is initialized and ready to use
+     *
+     * @return
+     */
+    boolean initialized();
+
+    /**
+     * Callback for when the session is initialized and ready
+     *
+     * @param callback
+     */
+    void onReady(Handler<AsyncResult<Void>> callback);
 
 }

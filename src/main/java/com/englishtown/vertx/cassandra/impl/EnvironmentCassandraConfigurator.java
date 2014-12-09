@@ -1,8 +1,10 @@
 package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.PlainTextAuthProvider;
+import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -33,59 +35,61 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     }
 
     @Override
-    protected void initSeeds(JsonObject config) {
+    protected void initSeeds(JsonArray seeds) {
 
-        String envVarSeeds = container.env().get(ENV_VAR_SEEDS);
+        // Recall super
+        super.initSeeds(seeds);
 
-        // If no environment variable is set up, we fall back on the JSON config
-        if (Strings.isNullOrEmpty(envVarSeeds)) {
-            logger.debug("No environment configuration for seeds found, so falling back to JSON configuration.");
-            super.initSeeds(config);
-        } else {
-            logger.debug("Using environment configuration of " + envVarSeeds);
-            String[] seedsArray = envVarSeeds.split("\\|");
-            seeds = ImmutableList.copyOf(seedsArray);
-        }
-    }
+        // If default, try env vars
+        if (DEFAULT_SEEDS.equals(this.seeds)) {
+            String envVarSeeds = container.env().get(ENV_VAR_SEEDS);
 
-    @Override
-    protected void initPolicies(JsonObject config) {
-
-        String envVarLocalDC = container.env().get(ENV_VAR_LOCAL_DC);
-
-        // If the environment variable is not defined, then we just fall back on the JSON config
-        if (Strings.isNullOrEmpty(envVarLocalDC)) {
-            logger.debug("No environment configuration found for local DC, so falling back on JSON configuration.");
-            super.initPolicies(config);
-        } else {
-            logger.debug("Using environment config for Local DC of " + envVarLocalDC);
-
-            // We take the current config, remove any local dc configuration and replace it with our environment var version
-            JsonObject policies = config.getObject("policies");
-            if (policies == null) {
-                policies = new JsonObject();
-                config.putObject("policies", policies);
+            if (!Strings.isNullOrEmpty(envVarSeeds)) {
+                logger.debug("Using environment configuration of " + envVarSeeds);
+                String[] seedsArray = envVarSeeds.split("\\|");
+                this.seeds = ImmutableList.copyOf(seedsArray);
             }
-
-            JsonObject loadBalancing = new JsonObject();
-            loadBalancing.putString("name", "DCAwareRoundRobinPolicy").putString("local_dc", envVarLocalDC);
-
-            policies.putObject("load_balancing", loadBalancing);
-
-            super.initPolicies(config);
         }
     }
 
     @Override
-    protected void initAuthProvider(JsonObject config) {
+    protected void initPolicies(JsonObject policyConfig) {
+        super.initPolicies(policyConfig == null ? new JsonObject() : policyConfig);
+    }
 
-        String username = container.env().get(ENV_VAR_USERNAME);
-        String password = container.env().get(ENV_VAR_PASSWORD);
+    @Override
+    protected void initLoadBalancingPolicy(JsonObject loadBalancing) {
 
-        if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
-            authProvider = new PlainTextAuthProvider(username, password);
-        } else {
-            super.initAuthProvider(config);
+        // Recall super
+        super.initLoadBalancingPolicy(loadBalancing);
+
+        // If LB policy not set, try env vars
+        if (loadBalancingPolicy == null) {
+            String localDC = container.env().get(ENV_VAR_LOCAL_DC);
+
+            if (!Strings.isNullOrEmpty(localDC)) {
+                logger.debug("Using environment config for Local DC of " + localDC);
+                loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDC);
+            } else {
+                logger.debug("No environment configuration found for local DC");
+            }
+        }
+    }
+
+    @Override
+    protected void initAuthProvider(JsonObject auth) {
+
+        // Recall super
+        super.initAuthProvider(auth);
+
+        // If auth provider not set, try env vars
+        if (authProvider == null) {
+            String username = container.env().get(ENV_VAR_USERNAME);
+            String password = container.env().get(ENV_VAR_PASSWORD);
+
+            if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
+                authProvider = new PlainTextAuthProvider(username, password);
+            }
         }
 
     }

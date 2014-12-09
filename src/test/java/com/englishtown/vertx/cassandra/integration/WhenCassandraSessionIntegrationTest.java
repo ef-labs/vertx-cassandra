@@ -20,7 +20,6 @@ public class WhenCassandraSessionIntegrationTest extends IntegrationTestBase {
 
         final Context context = vertx.currentContext();
 
-        final WhenCassandraSession whenSession = new DefaultWhenCassandraSession(session, when);
         Promise<ResultSet> promise = whenSession.executeAsync(createTestTableStatement);
 
         promise.then(

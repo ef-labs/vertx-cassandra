@@ -73,7 +73,7 @@ public class EnvironmentCassandraConfiguratorTest {
         EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
         LoadBalancingPolicy loadBalancingPolicy = configurator.getLoadBalancingPolicy();
 
-        assertTrue(loadBalancingPolicy instanceof DCAwareRoundRobinPolicy);
+        assertThat(loadBalancingPolicy, instanceOf(DCAwareRoundRobinPolicy.class));
     }
 
     @Test
