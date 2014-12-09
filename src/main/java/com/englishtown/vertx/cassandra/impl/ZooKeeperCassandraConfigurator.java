@@ -46,7 +46,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
 
         List<Promise<Void>> promises = new ArrayList<>();
 
-        if (!(seeds.size() == 1 && "127.0.0.1".equals(seeds.<String>get(0)))) {
+        if (DEFAULT_SEEDS.equals(seeds)) {
             promises.add(helper.getConfigElement("/cassandra/seeds").then(
                     value -> {
                         JsonArray array = value.asJsonArray();
@@ -57,68 +57,82 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
                     }));
         }
 
-        promises.add(helper.getConfigElement("/cassandra/policies/load_balancing").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initLoadBalancingPolicy(json);
-                    }
-                    return null;
-                }));
+        if (loadBalancingPolicy == null) {
+            promises.add(helper.getConfigElement("/cassandra/policies/load_balancing").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initLoadBalancingPolicy(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/policies/reconnection").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initLoadBalancingPolicy(json);
-                    }
-                    return null;
-                }));
+        if (reconnectionPolicy == null) {
+            promises.add(helper.getConfigElement("/cassandra/policies/reconnection").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initLoadBalancingPolicy(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/pooling").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initPoolingOptions(json);
-                    }
-                    return null;
-                }));
+        if (poolingOptions == null) {
+            promises.add(helper.getConfigElement("/cassandra/pooling").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initPoolingOptions(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/socket").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initSocketOptions(json);
-                    }
-                    return null;
-                }));
+        if (socketOptions == null) {
+            promises.add(helper.getConfigElement("/cassandra/socket").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initSocketOptions(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/query").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initQueryOptions(json);
-                    }
-                    return null;
-                }));
+        if (queryOptions == null) {
+            promises.add(helper.getConfigElement("/cassandra/query").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initQueryOptions(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/metrics").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initMetricsOptions(json);
-                    }
-                    return null;
-                }));
+        if (metricsOptions == null) {
+            promises.add(helper.getConfigElement("/cassandra/metrics").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initMetricsOptions(json);
+                        }
+                        return null;
+                    }));
+        }
 
-        promises.add(helper.getConfigElement("/cassandra/auth").then(
-                value -> {
-                    JsonObject json = value.asJsonObject();
-                    if (json != null) {
-                        initAuthProvider(json);
-                    }
-                    return null;
-                }));
+        if (authProvider == null) {
+            promises.add(helper.getConfigElement("/cassandra/auth").then(
+                    value -> {
+                        JsonObject json = value.asJsonObject();
+                        if (json != null) {
+                            initAuthProvider(json);
+                        }
+                        return null;
+                    }));
+        }
 
         when.all(promises)
                 .then(aVoid -> {
@@ -140,7 +154,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
     @Override
     public void onReady(Handler<AsyncResult<Void>> callback) {
         if (initResult != null) {
-            callback.handle(new DefaultFutureResult<>((Void) null));
+            callback.handle(initResult);
         } else {
             onReadyCallbacks.add(callback);
         }

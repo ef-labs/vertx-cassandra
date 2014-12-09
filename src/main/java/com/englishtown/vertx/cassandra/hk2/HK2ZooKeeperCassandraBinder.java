@@ -16,6 +16,12 @@ public class HK2ZooKeeperCassandraBinder extends AbstractBinder {
      */
     @Override
     protected void configure() {
+
+        // Install main bindings
+        install(new HK2CassandraBinder());
+
+        // zookeeper bindings
         bind(ZooKeeperCassandraConfigurator.class).to(CassandraConfigurator.class).in(Singleton.class).ranked(10);
+
     }
 }

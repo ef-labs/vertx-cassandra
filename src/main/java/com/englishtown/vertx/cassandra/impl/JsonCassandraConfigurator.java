@@ -4,6 +4,7 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultFutureResult;
@@ -13,6 +14,7 @@ import org.vertx.java.platform.Container;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -30,6 +32,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected QueryOptions queryOptions;
     protected MetricsOptions metricsOptions;
     protected AuthProvider authProvider;
+
+    protected final List<String> DEFAULT_SEEDS = ImmutableList.of("127.0.0.1");
 
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_POLICIES = "policies";
@@ -120,7 +124,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         // Get array of IPs, default to localhost
         if (seeds == null || seeds.size() == 0) {
-            seeds = new JsonArray().addString("127.0.0.1");
+            this.seeds = DEFAULT_SEEDS;
+            return;
         }
 
         this.seeds = new ArrayList<>();

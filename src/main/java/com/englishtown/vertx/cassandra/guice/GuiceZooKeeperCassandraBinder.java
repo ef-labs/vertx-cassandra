@@ -16,6 +16,12 @@ public class GuiceZooKeeperCassandraBinder extends AbstractModule {
      */
     @Override
     protected void configure() {
+
+        // Install main bindings
+        install(new GuiceCassandraBinder());
+
+        // zookeeper bindings
         bind(CassandraConfigurator.class).to(ZooKeeperCassandraConfigurator.class).in(Singleton.class);
+
     }
 }
