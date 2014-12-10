@@ -6,6 +6,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.vertx.core.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,11 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.impl.DefaultFutureResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -110,7 +106,7 @@ public class DefaultCassandraSessionTest {
     @Before
     public void setUp() {
 
-        when(vertx.currentContext()).thenReturn(context).thenReturn(null);
+        when(vertx.getOrCreateContext()).thenReturn(context).thenReturn(null);
 
         when(clusterBuilder.build()).thenReturn(cluster);
         when(cluster.getConfiguration()).thenReturn(configuration);
@@ -129,7 +125,7 @@ public class DefaultCassandraSessionTest {
         cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
 
         verify(configurator).onReady(onReadyCaptor.capture());
-        onReadyCaptor.getValue().handle(new DefaultFutureResult<>((Void) null));
+        onReadyCaptor.getValue().handle(Future.succeededFuture(null));
     }
 
     @Test

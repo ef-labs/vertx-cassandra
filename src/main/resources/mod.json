@@ -1,7 +1,0 @@
-{
-    "description": "Execute cassandra statements from a vert.x module",
-    "licenses": ["The MIT License"],
-    "author": "EF Englishtown",
-    "keywords": ["Cassandra", "cassandra", "C*"],
-    "homepage": "https://github.com/englishtown/vertx-mod-cassandra"
-}

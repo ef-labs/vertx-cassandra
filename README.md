@@ -1,4 +1,4 @@
-# vertx-mod-cassandra
+# vertx-cassandra
 Non-runnable module that provides functionality for talking to Cassandra.
 
 ## Configuration

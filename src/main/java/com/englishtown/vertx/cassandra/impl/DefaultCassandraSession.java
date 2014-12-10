@@ -6,13 +6,9 @@ import com.englishtown.vertx.cassandra.CassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
+import io.vertx.core.*;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -104,7 +100,7 @@ public class DefaultCassandraSession implements CassandraSession {
         cluster = clusterBuilder.build();
         reconnect();
 
-        runOnReadyCallbacks(new DefaultFutureResult<>((Void) null));
+        runOnReadyCallbacks(Future.succeededFuture(null));
     }
 
     private void runOnReadyCallbacks(AsyncResult<Void> result) {
@@ -237,7 +233,7 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     private <V> FutureCallback<V> wrapCallback(final FutureCallback<V> callback) {
-        final Context context = vertx.currentContext();
+        final Context context = vertx.getOrCreateContext();
 
         // Make sure the callback runs on the vert.x thread
         return new FutureCallback<V>() {

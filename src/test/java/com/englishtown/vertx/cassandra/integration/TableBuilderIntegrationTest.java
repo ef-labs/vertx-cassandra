@@ -7,7 +7,6 @@ import com.englishtown.vertx.cassandra.tablebuilder.AlterTable;
 import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import org.junit.Test;
-import org.vertx.testtools.VertxAssert;
 
 import java.util.List;
 
@@ -19,12 +18,12 @@ public class TableBuilderIntegrationTest extends IntegrationTestBase {
     @Test
     public void testTableBuilder() throws Exception {
 
-        VertxAssert.assertNotNull(session.getMetadata().getKeyspace(keyspace));
+        assertNotNull(session.getMetadata().getKeyspace(keyspace));
 
         String table = "test_table";
         Statement statement;
 
-        VertxAssert.assertNull(session.getMetadata().getKeyspace(keyspace).getTable(table));
+        assertNull(session.getMetadata().getKeyspace(keyspace).getTable(table));
 
         // Create the table
         statement = TableBuilder.create(keyspace, table)
@@ -34,11 +33,11 @@ public class TableBuilderIntegrationTest extends IntegrationTestBase {
 
         session.execute(statement);
 
-        VertxAssert.assertNotNull(session.getMetadata().getKeyspace(keyspace).getTable(table));
+        assertNotNull(session.getMetadata().getKeyspace(keyspace).getTable(table));
 
         try {
             session.execute(statement);
-            VertxAssert.fail("Table already exists, create should have throw AlreadyExistsException");
+            fail("Table already exists, create should have throw AlreadyExistsException");
         } catch (QueryValidationException e) {
             // Expected
         }
@@ -68,7 +67,7 @@ public class TableBuilderIntegrationTest extends IntegrationTestBase {
         }
 
         tableMetadata = session.getMetadata().getKeyspace(keyspace).getTable(table);
-        VertxAssert.assertEquals(5, tableMetadata.getColumns().size());
+        assertEquals(5, tableMetadata.getColumns().size());
 
         statement = TableBuilder.drop(keyspace, table);
         session.execute(statement);
@@ -80,12 +79,12 @@ public class TableBuilderIntegrationTest extends IntegrationTestBase {
         try {
             statement = TableBuilder.drop(keyspace, table);
             session.execute(statement);
-            VertxAssert.fail("Table should not exist, drop should have throw InvalidQueryException");
+            fail("Table should not exist, drop should have throw InvalidQueryException");
         } catch (QueryValidationException e) {
             // Expected
         }
 
-        VertxAssert.testComplete();
+        testComplete();
 
     }
 

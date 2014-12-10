@@ -4,20 +4,20 @@ import com.datastax.driver.core.AuthProvider;
 import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.Container;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -27,22 +27,25 @@ import static org.mockito.Mockito.when;
 public class EnvironmentCassandraConfiguratorTest {
 
     JsonObject config = new JsonObject();
-    Map<String, String> env = new HashMap<>();
 
     @Mock
-    Container container;
+    Vertx vertx;
+    @Mock
+    Context context;
+    @Mock
+    EnvironmentCassandraConfigurator.EnvVarDelegate envVarDelegate;
 
     @Before
     public void setUp() {
-        when(container.config()).thenReturn(config);
-        when(container.env()).thenReturn(env);
+        when(context.config()).thenReturn(config);
+        when(vertx.getOrCreateContext()).thenReturn(context);
     }
 
 
     @Test
     public void testInitSeeds_Defaults() throws Exception {
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(container);
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(vertx, envVarDelegate);
         List<String> seeds = configurator.getSeeds();
 
         assertNotNull(seeds);
@@ -53,9 +56,9 @@ public class EnvironmentCassandraConfiguratorTest {
     @Test
     public void testInitSeeds() throws Exception {
 
-        env.put(EnvironmentCassandraConfigurator.ENV_VAR_SEEDS, "127.0.0.2|127.0.0.3|127.0.0.4");
+        when(envVarDelegate.get(eq(EnvironmentCassandraConfigurator.ENV_VAR_SEEDS))).thenReturn("127.0.0.2|127.0.0.3|127.0.0.4");
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, envVarDelegate);
         List<String> seeds = configurator.getSeeds();
 
         assertNotNull(seeds);
@@ -68,9 +71,9 @@ public class EnvironmentCassandraConfiguratorTest {
     @Test
     public void testInitPolicies() throws Exception {
 
-        env.put(EnvironmentCassandraConfigurator.ENV_VAR_LOCAL_DC, "LOCAL1");
+        when(envVarDelegate.get(eq(EnvironmentCassandraConfigurator.ENV_VAR_LOCAL_DC))).thenReturn("LOCAL1");
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, envVarDelegate);
         LoadBalancingPolicy loadBalancingPolicy = configurator.getLoadBalancingPolicy();
 
         assertThat(loadBalancingPolicy, instanceOf(DCAwareRoundRobinPolicy.class));
@@ -79,17 +82,17 @@ public class EnvironmentCassandraConfiguratorTest {
     @Test
     public void testInitAuthProvider() throws Exception {
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, envVarDelegate);
         AuthProvider authProvider = configurator.getAuthProvider();
 
         assertNull(authProvider);
 
         String username = "test";
         String password = "test_password";
-        env.put(EnvironmentCassandraConfigurator.ENV_VAR_USERNAME, username);
-        env.put(EnvironmentCassandraConfigurator.ENV_VAR_PASSWORD, password);
+        when(envVarDelegate.get(eq(EnvironmentCassandraConfigurator.ENV_VAR_USERNAME))).thenReturn(username);
+        when(envVarDelegate.get(eq(EnvironmentCassandraConfigurator.ENV_VAR_PASSWORD))).thenReturn(password);
 
-        configurator = new EnvironmentCassandraConfigurator(config, container);
+        configurator = new EnvironmentCassandraConfigurator(config, envVarDelegate);
         authProvider = configurator.getAuthProvider();
 
         assertThat(authProvider, instanceOf(PlainTextAuthProvider.class));

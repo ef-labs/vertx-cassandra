@@ -2,14 +2,15 @@ package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.*;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.Container;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -26,7 +27,9 @@ public class JsonCassandraConfiguratorTest {
 
     JsonObject config = new JsonObject();
     @Mock
-    Container container;
+    Vertx vertx;
+    @Mock
+    Context context;
 
     public static class TestLoadBalancingPolicy implements LoadBalancingPolicy {
         @Override
@@ -73,25 +76,26 @@ public class JsonCassandraConfiguratorTest {
 
     @Before
     public void setUp() throws Exception {
-        JsonObject baseConfig = new JsonObject().putObject("cassandra", config);
-        when(container.config()).thenReturn(baseConfig);
+        JsonObject baseConfig = new JsonObject().put("cassandra", config);
+        when(context.config()).thenReturn(baseConfig);
+        when(vertx.getOrCreateContext()).thenReturn(context);
     }
 
     @Test
     public void testGetSeeds() throws Exception {
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getSeeds());
         assertFalse(configurator.getSeeds().isEmpty());
         assertEquals("127.0.0.1", configurator.getSeeds().get(0));
 
-        config.putArray("seeds", new JsonArray()
-                        .addString("127.0.0.1")
-                        .addString("127.0.0.2")
-                        .addString("127.0.0.3")
+        config.put("seeds", new JsonArray()
+                        .add("127.0.0.1")
+                        .add("127.0.0.2")
+                        .add("127.0.0.3")
         );
 
-        configurator = new JsonCassandraConfigurator(container);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getSeeds());
         assertEquals(3, configurator.getSeeds().size());
 
@@ -99,15 +103,15 @@ public class JsonCassandraConfiguratorTest {
 
     @Test
     public void testInitPolicies_LoadBalancing_No_Policies() throws Exception {
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getLoadBalancingPolicy());
     }
 
     @Test
     public void testInitPolicies_LoadBalancing_Missing_Name() throws Exception {
-        config.putObject("policies", new JsonObject().putObject("load_balancing", new JsonObject()));
+        config.put("policies", new JsonObject().put("load_balancing", new JsonObject()));
         try {
-            new JsonCassandraConfigurator(container);
+            new JsonCassandraConfigurator(vertx);
             fail();
         } catch (IllegalArgumentException e) {
             // Expected
@@ -117,12 +121,12 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_LoadBalancing_DCAwareRoundRobinPolicy() throws Exception {
 
-        config.putObject("policies", new JsonObject()
-                .putObject("load_balancing", new JsonObject()
-                        .putString("name", "DCAwareRoundRobinPolicy")
-                        .putString("local_dc", "US1")));
+        config.put("policies", new JsonObject()
+                .put("load_balancing", new JsonObject()
+                        .put("name", "DCAwareRoundRobinPolicy")
+                        .put("local_dc", "US1")));
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getLoadBalancingPolicy());
         assertThat(configurator.getLoadBalancingPolicy(), instanceOf(DCAwareRoundRobinPolicy.class));
 
@@ -131,12 +135,12 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_LoadBalancing_Custom() throws Exception {
 
-        config.putObject("policies", new JsonObject()
-                .putObject("load_balancing", new JsonObject()
-                                .putString("name", TestLoadBalancingPolicy.class.getName())
+        config.put("policies", new JsonObject()
+                .put("load_balancing", new JsonObject()
+                                .put("name", TestLoadBalancingPolicy.class.getName())
                 ));
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getLoadBalancingPolicy());
         assertThat(configurator.getLoadBalancingPolicy(), instanceOf(TestLoadBalancingPolicy.class));
 
@@ -144,15 +148,15 @@ public class JsonCassandraConfiguratorTest {
 
     @Test
     public void testInitPolicies_Reconnection_No_Policies() throws Exception {
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getReconnectionPolicy());
     }
 
     @Test
     public void testInitPolicies_Reconnection_Missing_Name() throws Exception {
-        config.putObject("policies", new JsonObject().putObject("reconnection", new JsonObject()));
+        config.put("policies", new JsonObject().put("reconnection", new JsonObject()));
         try {
-            new JsonCassandraConfigurator(container);
+            new JsonCassandraConfigurator(vertx);
             fail();
         } catch (IllegalArgumentException e) {
             // Expected
@@ -162,12 +166,12 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_Reconnection_ConstantReconnectionPolicy() throws Exception {
 
-        config.putObject("policies", new JsonObject()
-                .putObject("reconnection", new JsonObject()
-                        .putString("name", "constant")
-                        .putNumber("delay", 1000)));
+        config.put("policies", new JsonObject()
+                .put("reconnection", new JsonObject()
+                        .put("name", "constant")
+                        .put("delay", 1000)));
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getReconnectionPolicy());
         assertThat(configurator.getReconnectionPolicy(), instanceOf(ConstantReconnectionPolicy.class));
 
@@ -176,13 +180,13 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_Reconnection_ExponentialReconnectionPolicy() throws Exception {
 
-        config.putObject("policies", new JsonObject()
-                .putObject("reconnection", new JsonObject()
-                        .putString("name", "exponential")
-                        .putNumber("base_delay", 1000)
-                        .putNumber("max_delay", 5000)));
+        config.put("policies", new JsonObject()
+                .put("reconnection", new JsonObject()
+                        .put("name", "exponential")
+                        .put("base_delay", 1000)
+                        .put("max_delay", 5000)));
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getReconnectionPolicy());
         assertThat(configurator.getReconnectionPolicy(), instanceOf(ExponentialReconnectionPolicy.class));
 
@@ -191,12 +195,12 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_Reconnection_Custom() throws Exception {
 
-        config.putObject("policies", new JsonObject()
-                .putObject("reconnection", new JsonObject()
-                                .putString("name", TestReconnectionPolicy.class.getName())
+        config.put("policies", new JsonObject()
+                .put("reconnection", new JsonObject()
+                                .put("name", TestReconnectionPolicy.class.getName())
                 ));
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getReconnectionPolicy());
         assertThat(configurator.getReconnectionPolicy(), instanceOf(TestReconnectionPolicy.class));
 
@@ -205,21 +209,21 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testGetPoolingOptions() throws Exception {
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getPoolingOptions());
 
-        config.putObject("pooling", new JsonObject()
-                        .putNumber("core_connections_per_host_local", 1)
-                        .putNumber("core_connections_per_host_remote", 2)
-                        .putNumber("max_connections_per_host_local", 3)
-                        .putNumber("max_connections_per_host_remote", 4)
-                        .putNumber("min_simultaneous_requests_local", 5)
-                        .putNumber("min_simultaneous_requests_remote", 6)
-                        .putNumber("max_simultaneous_requests_local", 7)
-                        .putNumber("max_simultaneous_requests_remote", 8)
+        config.put("pooling", new JsonObject()
+                        .put("core_connections_per_host_local", 1)
+                        .put("core_connections_per_host_remote", 2)
+                        .put("max_connections_per_host_local", 3)
+                        .put("max_connections_per_host_remote", 4)
+                        .put("min_simultaneous_requests_local", 5)
+                        .put("min_simultaneous_requests_remote", 6)
+                        .put("max_simultaneous_requests_local", 7)
+                        .put("max_simultaneous_requests_remote", 8)
         );
 
-        configurator = new JsonCassandraConfigurator(container);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getPoolingOptions());
 
         PoolingOptions options = configurator.getPoolingOptions();
@@ -237,21 +241,21 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testGetSocketOptions() throws Exception {
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getSocketOptions());
 
-        config.putObject("socket", new JsonObject()
-                        .putNumber("connect_timeout_millis", 32000)
-                        .putNumber("read_timeout_millis", 33000)
-                        .putBoolean("keep_alive", true)
-                        .putBoolean("reuse_address", true)
-                        .putNumber("receive_buffer_size", 1024)
-                        .putNumber("send_buffer_size", 2048)
-                        .putNumber("so_linger", 10)
-                        .putBoolean("tcp_no_delay", false)
+        config.put("socket", new JsonObject()
+                        .put("connect_timeout_millis", 32000)
+                        .put("read_timeout_millis", 33000)
+                        .put("keep_alive", true)
+                        .put("reuse_address", true)
+                        .put("receive_buffer_size", 1024)
+                        .put("send_buffer_size", 2048)
+                        .put("so_linger", 10)
+                        .put("tcp_no_delay", false)
         );
 
-        configurator = new JsonCassandraConfigurator(container);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getSocketOptions());
 
         SocketOptions options = configurator.getSocketOptions();
@@ -271,52 +275,52 @@ public class JsonCassandraConfiguratorTest {
 
         JsonCassandraConfigurator configurator;
 
-        configurator = new JsonCassandraConfigurator(container);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getQueryOptions());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "");
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "");
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getQueryOptions());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ALL);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ALL);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.ALL, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ANY);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ANY);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.ANY, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_EACH_QUORUM);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_EACH_QUORUM);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.EACH_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.LOCAL_ONE, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.LOCAL_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ONE);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ONE);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.ONE, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_QUORUM);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_QUORUM);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.QUORUM, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_THREE);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_THREE);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.THREE, configurator.getQueryOptions().getConsistencyLevel());
 
-        config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_TWO);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_TWO);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertEquals(ConsistencyLevel.TWO, configurator.getQueryOptions().getConsistencyLevel());
 
         try {
-            config.putString(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "invalid consistency");
-            new JsonCassandraConfigurator(container);
+            config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "invalid consistency");
+            new JsonCassandraConfigurator(vertx);
 
             fail();
         } catch (IllegalArgumentException e) {
@@ -328,19 +332,19 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testGetMetricsOptions() throws Exception {
 
-        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getMetricsOptions());
 
         JsonObject metrics = new JsonObject();
 
-        config.putObject("metrics", metrics);
-        metrics.putBoolean("jmx_enabled", true);
-        configurator = new JsonCassandraConfigurator(container);
+        config.put("metrics", metrics);
+        metrics.put("jmx_enabled", true);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getMetricsOptions());
         assertTrue(configurator.getMetricsOptions().isJMXReportingEnabled());
 
-        metrics.putBoolean("jmx_enabled", false);
-        configurator = new JsonCassandraConfigurator(container);
+        metrics.put("jmx_enabled", false);
+        configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getMetricsOptions());
         assertFalse(configurator.getMetricsOptions().isJMXReportingEnabled());
 
@@ -349,7 +353,7 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitAuthProvider() throws Exception {
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, container);
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(config);
         AuthProvider authProvider = configurator.getAuthProvider();
 
         assertNull(authProvider);
@@ -357,12 +361,12 @@ public class JsonCassandraConfiguratorTest {
         String username = "test";
         String password = "test_password";
         JsonObject auth = new JsonObject()
-                .putString("username", username)
-                .putString("password", password);
+                .put("username", username)
+                .put("password", password);
 
-        config.putObject("auth", auth);
+        config.put("auth", auth);
 
-        configurator = new EnvironmentCassandraConfigurator(config, container);
+        configurator = new JsonCassandraConfigurator(config);
         authProvider = configurator.getAuthProvider();
 
         assertThat(authProvider, instanceOf(PlainTextAuthProvider.class));
@@ -376,29 +380,29 @@ public class JsonCassandraConfiguratorTest {
         String password = "test_password";
 
         JsonObject auth = new JsonObject();
-        config.putObject("auth", auth);
+        config.put("auth", auth);
 
         try {
-            new EnvironmentCassandraConfigurator(config, container);
+            new JsonCassandraConfigurator(config);
             fail("Expected error for missing username/password");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
-        auth.putString("username", username);
+        auth.put("username", username);
 
         try {
-            new EnvironmentCassandraConfigurator(config, container);
+            new JsonCassandraConfigurator(config);
             fail("Expected error for missing username/password");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
-        auth.removeField("username");
-        auth.putString("password", password);
+        auth.remove("username");
+        auth.put("password", password);
 
         try {
-            new EnvironmentCassandraConfigurator(config, container);
+            new JsonCassandraConfigurator(config);
             fail("Expected error for missing username/password");
         } catch (IllegalArgumentException e) {
             // expected

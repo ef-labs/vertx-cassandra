@@ -2,8 +2,8 @@ package com.englishtown.vertx.cassandra;
 
 import com.datastax.driver.core.*;
 import com.google.common.util.concurrent.FutureCallback;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 
 /**
  * Interface that represents a cassandra session

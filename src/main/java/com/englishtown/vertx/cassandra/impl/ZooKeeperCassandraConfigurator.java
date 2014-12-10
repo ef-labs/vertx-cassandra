@@ -4,12 +4,12 @@ import com.englishtown.promises.Promise;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.zookeeper.ZooKeeperClient;
 import com.englishtown.vertx.zookeeper.promises.WhenConfiguratorHelper;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.Container;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -20,16 +20,14 @@ import java.util.List;
  */
 public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigurator {
 
-    private final ZooKeeperClient client;
     private final WhenConfiguratorHelper helper;
     private final When when;
     private AsyncResult<Void> initResult;
     private final List<Handler<AsyncResult<Void>>> onReadyCallbacks = new ArrayList<>();
 
     @Inject
-    public ZooKeeperCassandraConfigurator(ZooKeeperClient client, WhenConfiguratorHelper helper, Container container, When when) {
-        super(container);
-        this.client = client;
+    public ZooKeeperCassandraConfigurator(ZooKeeperClient client, WhenConfiguratorHelper helper, When when, Vertx vertx, EnvVarDelegate envVarDelegate) {
+        super(vertx, envVarDelegate);
         this.helper = helper;
         this.when = when;
 
@@ -136,11 +134,11 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
 
         when.all(promises)
                 .then(aVoid -> {
-                    runOnReadyCallbacks(new DefaultFutureResult<>((Void) null));
+                    runOnReadyCallbacks(Future.succeededFuture(null));
                     return null;
                 })
                 .otherwise(t -> {
-                    runOnReadyCallbacks(new DefaultFutureResult<>(t));
+                    runOnReadyCallbacks(Future.failedFuture(t));
                     return null;
                 });
     }

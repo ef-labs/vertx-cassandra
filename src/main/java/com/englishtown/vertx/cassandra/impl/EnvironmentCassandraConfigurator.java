@@ -4,11 +4,10 @@ import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.Container;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -24,25 +23,32 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     public static final String ENV_VAR_PASSWORD = "CASSANDRA_PASSWORD";
 
     public static final Logger logger = LoggerFactory.getLogger(EnvironmentCassandraConfigurator.class);
+    private final EnvVarDelegate envVarDelegate;
 
     @Inject
-    public EnvironmentCassandraConfigurator(Container container) {
-        this(container.config().getObject("cassandra", new JsonObject()), container);
+    public EnvironmentCassandraConfigurator(Vertx vertx, EnvVarDelegate envVarDelegate) {
+        super(vertx);
+        this.envVarDelegate = envVarDelegate;
+        init();
     }
 
-    public EnvironmentCassandraConfigurator(JsonObject config, Container container) {
-        super(config, container);
+    public EnvironmentCassandraConfigurator(JsonObject config, EnvVarDelegate envVarDelegate) {
+        super(config);
+        this.envVarDelegate = envVarDelegate;
+        init();
     }
 
-    @Override
-    protected void initSeeds(JsonArray seeds) {
+    private void init() {
+        initSeeds();
+        initLoadBalancingPolicy();
+        initAuthProvider();
+    }
 
-        // Recall super
-        super.initSeeds(seeds);
+    private void initSeeds() {
 
         // If default, try env vars
         if (DEFAULT_SEEDS.equals(this.seeds)) {
-            String envVarSeeds = container.env().get(ENV_VAR_SEEDS);
+            String envVarSeeds = envVarDelegate.get(ENV_VAR_SEEDS);
 
             if (!Strings.isNullOrEmpty(envVarSeeds)) {
                 logger.debug("Using environment configuration of " + envVarSeeds);
@@ -52,20 +58,11 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         }
     }
 
-    @Override
-    protected void initPolicies(JsonObject policyConfig) {
-        super.initPolicies(policyConfig == null ? new JsonObject() : policyConfig);
-    }
-
-    @Override
-    protected void initLoadBalancingPolicy(JsonObject loadBalancing) {
-
-        // Recall super
-        super.initLoadBalancingPolicy(loadBalancing);
+    private void initLoadBalancingPolicy() {
 
         // If LB policy not set, try env vars
         if (loadBalancingPolicy == null) {
-            String localDC = container.env().get(ENV_VAR_LOCAL_DC);
+            String localDC = envVarDelegate.get(ENV_VAR_LOCAL_DC);
 
             if (!Strings.isNullOrEmpty(localDC)) {
                 logger.debug("Using environment config for Local DC of " + localDC);
@@ -76,16 +73,12 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         }
     }
 
-    @Override
-    protected void initAuthProvider(JsonObject auth) {
-
-        // Recall super
-        super.initAuthProvider(auth);
+    private void initAuthProvider() {
 
         // If auth provider not set, try env vars
         if (authProvider == null) {
-            String username = container.env().get(ENV_VAR_USERNAME);
-            String password = container.env().get(ENV_VAR_PASSWORD);
+            String username = envVarDelegate.get(ENV_VAR_USERNAME);
+            String password = envVarDelegate.get(ENV_VAR_PASSWORD);
 
             if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
                 authProvider = new PlainTextAuthProvider(username, password);
@@ -93,4 +86,17 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         }
 
     }
+
+    public interface EnvVarDelegate {
+        String get(String name);
+    }
+
+    public static class DefaultEnvVarDelegate implements EnvVarDelegate {
+
+        @Override
+        public String get(String name) {
+            return System.getenv(name);
+        }
+    }
+
 }
