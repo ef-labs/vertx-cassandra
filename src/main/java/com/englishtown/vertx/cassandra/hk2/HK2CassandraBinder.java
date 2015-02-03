@@ -23,6 +23,7 @@ public class HK2CassandraBinder extends AbstractBinder {
         bind(Cluster.Builder.class).to(Cluster.Builder.class);
         bind(DefaultCassandraSession.class).to(CassandraSession.class).in(Singleton.class);
         bind(EnvironmentCassandraConfigurator.class).to(CassandraConfigurator.class).in(Singleton.class);
+        bind(EnvironmentCassandraConfigurator.DefaultEnvVarDelegate.class).to(EnvironmentCassandraConfigurator.EnvVarDelegate.class);
 
     }
 }

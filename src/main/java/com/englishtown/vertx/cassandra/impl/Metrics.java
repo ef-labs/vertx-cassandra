@@ -9,8 +9,8 @@ import com.datastax.driver.core.policies.Policies;
 import com.datastax.driver.core.policies.ReconnectionPolicy;
 import com.datastax.driver.core.policies.RetryPolicy;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,67 +79,65 @@ class Metrics implements AutoCloseable {
         // Add seeds
         List<String> seeds = configurator.getSeeds();
         JsonArray arr = new JsonArray();
-        json.putArray("seeds", arr);
+        json.put("seeds", arr);
         if (seeds != null) {
-            for (String seed : seeds) {
-                arr.addString(seed);
-            }
+            seeds.forEach(arr::add);
         }
 
         Policies policies = configuration.getPolicies();
         JsonObject policiesJson = new JsonObject();
-        json.putObject("policies", policiesJson);
+        json.put("policies", policiesJson);
 
         if (policies != null) {
             LoadBalancingPolicy lbPolicy = policies.getLoadBalancingPolicy();
-            policiesJson.putString("load_balancing", lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
+            policiesJson.put("load_balancing", lbPolicy == null ? null : lbPolicy.getClass().getSimpleName());
             ReconnectionPolicy reconnectionPolicy = policies.getReconnectionPolicy();
-            policiesJson.putString("reconnection", reconnectionPolicy == null ? null : reconnectionPolicy.getClass().getSimpleName());
+            policiesJson.put("reconnection", reconnectionPolicy == null ? null : reconnectionPolicy.getClass().getSimpleName());
             RetryPolicy retryPolicy = policies.getRetryPolicy();
-            policiesJson.putString("retry", retryPolicy == null ? null : retryPolicy.getClass().getSimpleName());
+            policiesJson.put("retry", retryPolicy == null ? null : retryPolicy.getClass().getSimpleName());
         }
 
         PoolingOptions poolingOptions = configuration.getPoolingOptions();
         JsonObject pooling = new JsonObject();
-        json.putObject("pooling", pooling);
+        json.put("pooling", pooling);
 
         if (poolingOptions != null) {
-            pooling.putNumber("core_connections_per_host_local", poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL));
-            pooling.putNumber("core_connections_per_host_remote", poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE));
-            pooling.putNumber("max_connections_per_host_local", poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL));
-            pooling.putNumber("max_connections_per_host_remote", poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE));
+            pooling.put("core_connections_per_host_local", poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL));
+            pooling.put("core_connections_per_host_remote", poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE));
+            pooling.put("max_connections_per_host_local", poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL));
+            pooling.put("max_connections_per_host_remote", poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE));
 
-            pooling.putNumber("min_simultaneous_requests_local", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-            pooling.putNumber("min_simultaneous_requests_remote", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
-            pooling.putNumber("max_simultaneous_requests_local", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-            pooling.putNumber("max_simultaneous_requests_remote", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+            pooling.put("min_simultaneous_requests_local", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+            pooling.put("min_simultaneous_requests_remote", poolingOptions.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+            pooling.put("max_simultaneous_requests_local", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+            pooling.put("max_simultaneous_requests_remote", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
         }
 
         SocketOptions socketOptions = configuration.getSocketOptions();
         JsonObject socket = new JsonObject();
-        json.putObject("socket", socket);
+        json.put("socket", socket);
 
         if (socketOptions != null) {
-            socket.putNumber("connect_timeout_millis", socketOptions.getConnectTimeoutMillis());
-            socket.putNumber("read_timeout_millis", socketOptions.getReadTimeoutMillis());
-            socket.putNumber("receive_buffer_size", socketOptions.getReceiveBufferSize());
-            socket.putNumber("send_buffer_size", socketOptions.getSendBufferSize());
-            socket.putNumber("so_linger", socketOptions.getSoLinger());
-            socket.putBoolean("keep_alive", socketOptions.getKeepAlive());
-            socket.putBoolean("reuse_address", socketOptions.getReuseAddress());
-            socket.putBoolean("tcp_no_delay", socketOptions.getTcpNoDelay());
+            socket.put("connect_timeout_millis", socketOptions.getConnectTimeoutMillis());
+            socket.put("read_timeout_millis", socketOptions.getReadTimeoutMillis());
+            socket.put("receive_buffer_size", socketOptions.getReceiveBufferSize());
+            socket.put("send_buffer_size", socketOptions.getSendBufferSize());
+            socket.put("so_linger", socketOptions.getSoLinger());
+            socket.put("keep_alive", socketOptions.getKeepAlive());
+            socket.put("reuse_address", socketOptions.getReuseAddress());
+            socket.put("tcp_no_delay", socketOptions.getTcpNoDelay());
         }
 
         QueryOptions queryOptions = configuration.getQueryOptions();
         JsonObject query = new JsonObject();
-        json.putObject("query", query);
+        json.put("query", query);
 
         if (queryOptions != null) {
             ConsistencyLevel consistency = queryOptions.getConsistencyLevel();
-            query.putString("consistency", consistency == null ? null : consistency.name());
+            query.put("consistency", consistency == null ? null : consistency.name());
             consistency = queryOptions.getSerialConsistencyLevel();
-            query.putString("serial_consistency", consistency == null ? null : consistency.name());
-            query.putNumber("fetch_size", queryOptions.getFetchSize());
+            query.put("serial_consistency", consistency == null ? null : consistency.name());
+            query.put("fetch_size", queryOptions.getFetchSize());
         }
 
         return json;

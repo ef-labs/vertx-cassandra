@@ -2,11 +2,9 @@ package com.englishtown.vertx.cassandra.integration;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import com.google.common.util.concurrent.FutureCallback;
 import org.junit.Test;
-import org.vertx.java.core.Context;
-import org.vertx.testtools.VertxAssert;
+import io.vertx.core.Context;
 
 /**
  * Integration test for {@link com.englishtown.vertx.cassandra.CassandraSession}
@@ -27,30 +25,35 @@ public class CassandraSessionIntegrationTest extends IntegrationTestBase {
 
         BoundStatement bound = prepared.bind("123");
         ResultSet rs = session.execute(bound);
-        VertxAssert.assertNotNull(rs);
-        VertxAssert.testComplete();
+        assertNotNull(rs);
+        testComplete();
     }
 
     @Test
     public void testExecuteAsync() throws Exception {
 
-        final Context context = vertx.currentContext();
+        vertx.runOnContext(aVoid -> {
 
-        session.executeAsync(createTestTableStatement, new FutureCallback<ResultSet>() {
-            @Override
-            public void onSuccess(ResultSet result) {
-                // Make sure we're on the right context
-                VertxAssert.assertEquals(context, vertx.currentContext());
-                VertxAssert.assertNotNull(result);
-                VertxAssert.testComplete();
-            }
+            Context context = vertx.getOrCreateContext();
 
-            @Override
-            public void onFailure(Throwable t) {
-                VertxAssert.handleThrowable(t);
-                VertxAssert.fail();
-            }
+            session.executeAsync(createTestTableStatement, new FutureCallback<ResultSet>() {
+                @Override
+                public void onSuccess(ResultSet result) {
+                    // Make sure we're on the right context
+                    assertEquals(context, vertx.getOrCreateContext());
+                    assertNotNull(result);
+                    testComplete();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    handleThrowable(t);
+                }
+            });
+
         });
+
+        await();
 
     }
 

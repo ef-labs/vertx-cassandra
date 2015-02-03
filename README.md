@@ -111,6 +111,8 @@ The execution and preparation methods have both synchronous and asynchronous var
 
 `FutureCallback` is part of [Guava](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/util/concurrent/FutureCallback.html) and the JAR is included as part of the Datastax java driver used by this module.
 
+The general best practice is to inject one `CassandraSession` per verticle.
+
 ### Promises Variant
 There is a promises variant of `CassandraSession`, which is used by injecting `WhenCassandraSession` instead. This provides all of the same functionality, but instead of callbacks this class returns promises.
 

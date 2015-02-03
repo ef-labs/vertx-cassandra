@@ -5,24 +5,21 @@ import com.datastax.driver.core.policies.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.Container;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Json configuration based implementation of {@link com.englishtown.vertx.cassandra.CassandraConfigurator}
  */
 public class JsonCassandraConfigurator implements CassandraConfigurator {
-
-    protected final Container container;
 
     protected List<String> seeds;
     protected LoadBalancingPolicy loadBalancingPolicy;
@@ -54,12 +51,11 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONSISTENCY_EACH_QUORUM = "EACH_QUORUM";
 
     @Inject
-    public JsonCassandraConfigurator(Container container) {
-        this(container.config().getObject("cassandra", new JsonObject()), container);
+    public JsonCassandraConfigurator(Vertx vertx) {
+        this(vertx.getOrCreateContext().config().getJsonObject("cassandra", new JsonObject()));
     }
 
-    public JsonCassandraConfigurator(JsonObject config, Container container) {
-        this.container = container;
+    public JsonCassandraConfigurator(JsonObject config) {
         init(config);
     }
 
@@ -95,7 +91,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     @Override
     public void onReady(Handler<AsyncResult<Void>> callback) {
-        callback.handle(new DefaultFutureResult<>((Void) null));
+        callback.handle(Future.succeededFuture(null));
     }
 
     @Override
@@ -110,13 +106,13 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected void init(JsonObject config) {
 
-        initSeeds(config.getArray(CONFIG_SEEDS));
-        initPolicies(config.getObject(CONFIG_POLICIES));
-        initPoolingOptions(config.getObject(CONFIG_POOLING));
-        initSocketOptions(config.getObject(CONFIG_SOCKET));
+        initSeeds(config.getJsonArray(CONFIG_SEEDS));
+        initPolicies(config.getJsonObject(CONFIG_POLICIES));
+        initPoolingOptions(config.getJsonObject(CONFIG_POOLING));
+        initSocketOptions(config.getJsonObject(CONFIG_SOCKET));
         initQueryOptions(config);
-        initMetricsOptions(config.getObject(CONFIG_METRICS));
-        initAuthProvider(config.getObject(CONFIG_AUTH));
+        initMetricsOptions(config.getJsonObject(CONFIG_METRICS));
+        initAuthProvider(config.getJsonObject(CONFIG_AUTH));
 
     }
 
@@ -130,7 +126,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         this.seeds = new ArrayList<>();
         for (int i = 0; i < seeds.size(); i++) {
-            this.seeds.add(seeds.<String>get(i));
+            this.seeds.add(seeds.getString(i));
         }
     }
 
@@ -140,8 +136,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
             return;
         }
 
-        initLoadBalancingPolicy(policyConfig.getObject("load_balancing"));
-        initReconnectionPolicy(policyConfig.getObject("reconnection"));
+        initLoadBalancingPolicy(policyConfig.getJsonObject("load_balancing"));
+        initReconnectionPolicy(policyConfig.getJsonObject("reconnection"));
     }
 
     protected void initLoadBalancingPolicy(JsonObject loadBalancing) {
