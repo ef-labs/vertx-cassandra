@@ -24,6 +24,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
     private final When when;
     private AsyncResult<Void> initResult;
     private final List<Handler<AsyncResult<Void>>> onReadyCallbacks = new ArrayList<>();
+    protected String pathPrefix = "";
 
     @Inject
     public ZooKeeperCassandraConfigurator(ZooKeeperClient client, WhenConfiguratorHelper helper, When when, Vertx vertx, EnvVarDelegate envVarDelegate) {
@@ -45,7 +46,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         List<Promise<Void>> promises = new ArrayList<>();
 
         if (DEFAULT_SEEDS.equals(seeds)) {
-            promises.add(helper.getConfigElement("/cassandra/seeds").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/seeds").then(
                     value -> {
                         JsonArray array = value.asJsonArray();
                         if (array != null) {
@@ -56,7 +57,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (loadBalancingPolicy == null) {
-            promises.add(helper.getConfigElement("/cassandra/policies/load_balancing").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/policies/load_balancing").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -67,7 +68,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (reconnectionPolicy == null) {
-            promises.add(helper.getConfigElement("/cassandra/policies/reconnection").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/policies/reconnection").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -78,7 +79,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (poolingOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/pooling").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/pooling").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -89,7 +90,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (socketOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/socket").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/socket").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -100,7 +101,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (queryOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/query").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/query").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -111,7 +112,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (metricsOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/metrics").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/metrics").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -122,7 +123,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (authProvider == null) {
-            promises.add(helper.getConfigElement("/cassandra/auth").then(
+            promises.add(helper.getConfigElement(getPathPrefix() + "/cassandra/auth").then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -156,6 +157,10 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         } else {
             onReadyCallbacks.add(callback);
         }
+    }
+
+    protected String getPathPrefix() {
+        return pathPrefix;
     }
 
 }

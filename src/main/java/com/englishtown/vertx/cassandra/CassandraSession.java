@@ -123,4 +123,11 @@ public interface CassandraSession extends AutoCloseable {
      */
     void onReady(Handler<AsyncResult<Void>> callback);
 
+    /**
+     * Returns current the underlying DataStax {@link com.datastax.driver.core.Session}
+     *
+     * @return
+     */
+    Session getSession();
+
 }
