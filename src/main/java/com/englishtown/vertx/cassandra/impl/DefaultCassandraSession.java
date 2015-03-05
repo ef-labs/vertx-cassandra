@@ -221,6 +221,16 @@ public class DefaultCassandraSession implements CassandraSession {
         }
     }
 
+    /**
+     * Returns the current underlying DataStax {@link com.datastax.driver.core.Session}
+     *
+     * @return
+     */
+    @Override
+    public Session getSession() {
+        return session;
+    }
+
     @Override
     public void close() {
         logger.debug("Call to close the session has been made");
