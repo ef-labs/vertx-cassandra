@@ -10,6 +10,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.curator.utils.ZKPaths;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
     private final When when;
     private AsyncResult<Void> initResult;
     private final List<Handler<AsyncResult<Void>>> onReadyCallbacks = new ArrayList<>();
+    protected String pathPrefix = "cassandra";
 
     @Inject
     public ZooKeeperCassandraConfigurator(ZooKeeperClient client, WhenConfiguratorHelper helper, When when, Vertx vertx, EnvVarDelegate envVarDelegate) {
@@ -45,7 +47,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         List<Promise<Void>> promises = new ArrayList<>();
 
         if (DEFAULT_SEEDS.equals(seeds)) {
-            promises.add(helper.getConfigElement("/cassandra/seeds").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "seeds")).then(
                     value -> {
                         JsonArray array = value.asJsonArray();
                         if (array != null) {
@@ -56,7 +58,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (loadBalancingPolicy == null) {
-            promises.add(helper.getConfigElement("/cassandra/policies/load_balancing").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "policies/load_balancing")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -67,7 +69,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (reconnectionPolicy == null) {
-            promises.add(helper.getConfigElement("/cassandra/policies/reconnection").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "policies/reconnection")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -78,7 +80,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (poolingOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/pooling").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "pooling")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -89,7 +91,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (socketOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/socket").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "socket")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -100,7 +102,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (queryOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/query").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "query")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -111,7 +113,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (metricsOptions == null) {
-            promises.add(helper.getConfigElement("/cassandra/metrics").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "metrics")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -122,7 +124,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         }
 
         if (authProvider == null) {
-            promises.add(helper.getConfigElement("/cassandra/auth").then(
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "auth")).then(
                     value -> {
                         JsonObject json = value.asJsonObject();
                         if (json != null) {
@@ -156,6 +158,10 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
         } else {
             onReadyCallbacks.add(callback);
         }
+    }
+
+    protected String getPathPrefix() {
+        return pathPrefix;
     }
 
 }

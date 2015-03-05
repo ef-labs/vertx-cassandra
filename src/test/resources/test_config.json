@@ -1,8 +1,8 @@
 {
     "cassandra": {
         "auth": {
-            "username": "test",
-            "password": "test"
+            "username": "cassandra",
+            "password": "cassandra"
         }
     }
 }
