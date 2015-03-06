@@ -26,6 +26,11 @@
             <version>${cassandra.driver.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-mapping</artifactId>
+            <version>${cassandra.driver.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.englishtown.vertx</groupId>
             <artifactId>vertx-when</artifactId>
             <version>${vertx.when.version}</version>
