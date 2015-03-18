@@ -1,7 +1,10 @@
 package com.englishtown.vertx.cassandra;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.mapping.Mapper;
 import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
@@ -81,6 +84,47 @@ public interface CassandraSession extends AutoCloseable {
      * @return a prepared statement
      */
     PreparedStatement prepare(String query);
+
+
+    /**
+     * Saves the provided object using the mapper passed in.
+     *
+     * @param mapper the mapper used to do the save
+     * @param entity the object to save
+     * @param callback the callback to fire on completion
+     * @param <T>
+     */
+    <T> void saveAsync(Mapper<T> mapper, T entity, FutureCallback<Void> callback);
+
+    /**
+     * Deletes the provided object using the mapper passed in.
+     *
+     * @param mapper the mapper used to do the delete
+     * @param entity the object representing the data to delete
+     * @param callback the callback to fire on completion
+     * @param <T>
+     */
+    <T> void deleteAsync(Mapper<T> mapper, T entity, FutureCallback<Void> callback);
+
+    /**
+     * Deletes a record using the mapper passed in.
+     *
+     * @param mapper the mapper used to do the delete
+     * @param callback the callback to fire on completion
+     * @param primaryKey the primary key of the data being deleted
+     * @param <T>
+     */
+    <T> void deleteAsync(Mapper<T> mapper, FutureCallback<Void> callback, Object ... primaryKey);
+
+    /**
+     * Gets an object based on a primary key
+     *
+     * @param mapper the mapper used to do the get
+     * @param callback the callback to fire on completion
+     * @param primaryKey the primary key of the data being queried
+     * @param <T>
+     */
+    <T> void getAsync(Mapper<T> mapper, FutureCallback<T> callback, Object ... primaryKey);
 
     /**
      * Returns cassandra metadata

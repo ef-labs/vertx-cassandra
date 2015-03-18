@@ -1,6 +1,7 @@
 package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.mapping.Mapper;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
@@ -156,6 +157,34 @@ public class DefaultCassandraSession implements CassandraSession {
     public PreparedStatement prepare(String query) {
         checkInitialized();
         return session.prepare(query);
+    }
+
+    @Override
+    public <T> void saveAsync(Mapper<T> mapper, T entity, FutureCallback<Void> callback) {
+        checkInitialized();
+        ListenableFuture<Void> future =  mapper.saveAsync(entity);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public <T> void deleteAsync(Mapper<T> mapper, T entity, FutureCallback<Void> callback) {
+        checkInitialized();
+        ListenableFuture<Void> future =  mapper.deleteAsync(entity);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public <T> void deleteAsync(Mapper<T> mapper, FutureCallback<Void> callback, Object ... primaryKey) {
+        checkInitialized();
+        ListenableFuture<Void> future =  mapper.deleteAsync(primaryKey);
+        Futures.addCallback(future, wrapCallback(callback));
+    }
+
+    @Override
+    public <T> void getAsync(Mapper<T> mapper, FutureCallback<T> callback, Object ... primaryKey) {
+        checkInitialized();
+        ListenableFuture<T> future =  mapper.getAsync(primaryKey);
+        Futures.addCallback(future, wrapCallback(callback));
     }
 
     @Override

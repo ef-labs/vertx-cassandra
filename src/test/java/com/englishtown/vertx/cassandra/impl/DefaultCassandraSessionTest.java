@@ -3,6 +3,7 @@ package com.englishtown.vertx.cassandra.impl;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.mapping.Mapper;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -36,6 +37,17 @@ public class DefaultCassandraSessionTest {
     List<String> seeds = new ArrayList<>();
     Configuration configuration = new Configuration();
 
+    class TestEntity {
+
+        public TestEntity(String testStr1, String testStr2) {
+            this.testStr1 = testStr1;
+            this.testStr2 = testStr2;
+        }
+
+        public String testStr1;
+        public String testStr2;
+    }
+
     @Mock
     Vertx vertx;
     @Mock
@@ -52,6 +64,10 @@ public class DefaultCassandraSessionTest {
     Metadata metadata;
     @Mock
     FutureCallback<ResultSet> callback;
+    @Mock
+    FutureCallback<Void> mappingCallbackNoOp;
+    @Mock
+    FutureCallback<TestEntity> mappingCallbackEntity;
     @Mock
     ListenableFuture<PreparedStatement> preparedStatementFuture;
     @Mock
@@ -201,6 +217,60 @@ public class DefaultCassandraSessionTest {
         handlerCaptor.getValue().handle(null);
         verify(callback).onFailure(eq(e));
 
+    }
+
+    @Test
+    public void testSaveAsync() {
+        ListenableFuture<Void> future = (ListenableFuture<Void>)mock(ListenableFuture.class);
+        Mapper<TestEntity> testMapper = (Mapper<TestEntity>)mock(Mapper.class);
+
+        when(testMapper.saveAsync(any(TestEntity.class))).thenReturn(future);
+
+        TestEntity testObj =  new TestEntity("foo", "bar");
+        cassandraSession.saveAsync(testMapper, testObj, mappingCallbackNoOp);
+
+        verify(testMapper).saveAsync(eq(testObj));
+        verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
+    }
+
+    @Test
+    public void testDeleteAsyncEntity() {
+        ListenableFuture<Void> future = (ListenableFuture<Void>)mock(ListenableFuture.class);
+        Mapper<TestEntity> testMapper = (Mapper<TestEntity>)mock(Mapper.class);
+
+        when(testMapper.deleteAsync(any(TestEntity.class))).thenReturn(future);
+
+        TestEntity testObj =  new TestEntity("foo", "bar");
+        cassandraSession.deleteAsync(testMapper, testObj, mappingCallbackNoOp);
+
+        verify(testMapper).deleteAsync(eq(testObj));
+        verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
+    }
+
+    @Test
+    public void testDeleteAsyncPrimaryKey() {
+        ListenableFuture<Void> future = (ListenableFuture<Void>)mock(ListenableFuture.class);
+        Mapper<TestEntity> testMapper = (Mapper<TestEntity>)mock(Mapper.class);
+
+        when(testMapper.deleteAsync(any(String.class))).thenReturn(future);
+
+        cassandraSession.deleteAsync(testMapper, mappingCallbackNoOp, "foo");
+
+        verify(testMapper).deleteAsync(eq("foo"));
+        verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
+    }
+
+    @Test
+    public void testGetAsyncPrimaryKey() {
+        ListenableFuture<TestEntity> future = (ListenableFuture<TestEntity>)mock(ListenableFuture.class);
+        Mapper<TestEntity> testMapper = (Mapper<TestEntity>)mock(Mapper.class);
+
+        when(testMapper.getAsync(any(String.class))).thenReturn(future);
+
+        cassandraSession.getAsync(testMapper, mappingCallbackEntity, "foo");
+
+        verify(testMapper).getAsync(eq("foo"));
+        verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
     }
 
     @Test
