@@ -5,8 +5,11 @@ import com.englishtown.promises.Deferred;
 import com.englishtown.promises.Promise;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.CassandraSession;
+import com.englishtown.vertx.cassandra.FutureUtils;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.ListenableFuture;
+import io.vertx.core.Vertx;
 
 import javax.inject.Inject;
 
@@ -17,11 +20,13 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
 
     private final CassandraSession session;
     private final When when;
+    private final Vertx vertx;
 
     @Inject
-    public DefaultWhenCassandraSession(CassandraSession session, When when) {
+    public DefaultWhenCassandraSession(CassandraSession session, When when, Vertx vertx) {
         this.session = session;
         this.when = when;
+        this.vertx = vertx;
     }
 
     /**
@@ -33,21 +38,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     @Override
 
     public Promise<ResultSet> executeAsync(Statement statement) {
-        final Deferred<ResultSet> d = when.defer();
-
-        session.executeAsync(statement, new FutureCallback<ResultSet>() {
-            @Override
-            public void onSuccess(ResultSet result) {
-                d.resolve(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                d.reject(t);
-            }
-        });
-
-        return d.getPromise();
+        return convertFuture(session.executeAsync(statement));
     }
 
     /**
@@ -58,21 +49,19 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<ResultSet> executeAsync(String query) {
-        final Deferred<ResultSet> d = when.defer();
+        return convertFuture(session.executeAsync(query));
+    }
 
-        session.executeAsync(query, new FutureCallback<ResultSet>() {
-            @Override
-            public void onSuccess(ResultSet result) {
-                d.resolve(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                d.reject(t);
-            }
-        });
-
-        return d.getPromise();
+    /**
+     * This is a convenience method for {@code executeAsync(new SimpleStatement(query, values))}.
+     *
+     * @param query
+     * @param values
+     * @return
+     */
+    @Override
+    public Promise<ResultSet> executeAsync(String query, Object... values) {
+        return convertFuture(session.executeAsync(query, values));
     }
 
     /**
@@ -83,21 +72,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<PreparedStatement> prepareAsync(RegularStatement statement) {
-        final Deferred<PreparedStatement> d = when.defer();
-
-        session.prepareAsync(statement, new FutureCallback<PreparedStatement>() {
-            @Override
-            public void onSuccess(PreparedStatement result) {
-                d.resolve(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                d.reject(t);
-            }
-        });
-
-        return d.getPromise();
+        return convertFuture(session.prepareAsync(statement));
     }
 
     /**
@@ -108,22 +83,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      */
     @Override
     public Promise<PreparedStatement> prepareAsync(String query) {
-        final Deferred<PreparedStatement> d = when.defer();
-
-        session.prepareAsync(query, new FutureCallback<PreparedStatement>() {
-            @Override
-            public void onSuccess(PreparedStatement result) {
-                d.resolve(result);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                d.reject(t);
-            }
-        });
-
-        return d.getPromise();
-
+        return convertFuture(session.prepareAsync(query));
     }
 
     /**
@@ -158,10 +118,42 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     }
 
     /**
+     * Return the {@link com.englishtown.vertx.cassandra.CassandraSession}
+     *
+     * @return
+     */
+    @Override
+    public CassandraSession getSession() {
+        return session;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void close() throws Exception {
         session.close();
     }
+
+    private <T> Promise<T> convertFuture(ListenableFuture<T> future) {
+
+        Deferred<T> d = when.defer();
+
+        FutureCallback<T> callback = new FutureCallback<T>() {
+            @Override
+            public void onSuccess(T result) {
+                d.resolve(result);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                d.reject(t);
+            }
+        };
+
+        FutureUtils.addCallback(future, callback, vertx);
+        return d.getPromise();
+
+    }
+
 }

@@ -2,6 +2,7 @@ package com.englishtown.vertx.cassandra.promises;
 
 import com.datastax.driver.core.*;
 import com.englishtown.promises.Promise;
+import com.englishtown.vertx.cassandra.CassandraSession;
 
 /**
  * When.java wrapper over {@link com.datastax.driver.core.Session}
@@ -23,6 +24,15 @@ public interface WhenCassandraSession extends AutoCloseable {
      * @return the promise for the {@link com.datastax.driver.core.ResultSet}
      */
     Promise<ResultSet> executeAsync(String query);
+
+    /**
+     * This is a convenience method for {@code executeAsync(new SimpleStatement(query, values))}.
+     *
+     * @param query
+     * @param values
+     * @return
+     */
+    Promise<ResultSet> executeAsync(String query, Object... values);
 
     /**
      * Prepares the provided query statement
@@ -60,6 +70,13 @@ public interface WhenCassandraSession extends AutoCloseable {
      *
      * @return the {@code Cluster} object this session is part of.
      */
-    public Cluster getCluster();
+    Cluster getCluster();
+
+    /**
+     * Return the {@link com.englishtown.vertx.cassandra.CassandraSession}
+     *
+     * @return
+     */
+    CassandraSession getSession();
 
 }

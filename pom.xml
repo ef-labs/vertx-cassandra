@@ -13,7 +13,7 @@
 
     <properties>
         <vertx.version>3.0.0-milestone3</vertx.version>
-        <cassandra.driver.version>2.1.4</cassandra.driver.version>
+        <cassandra.driver.version>2.1.5</cassandra.driver.version>
         <vertx.hk2.version>2.0.0-RC1</vertx.hk2.version>
         <vertx.guice.version>2.0.0-RC1</vertx.guice.version>
         <vertx.when.version>4.0.0-RC1</vertx.when.version>
@@ -26,29 +26,31 @@
             <artifactId>cassandra-driver-core</artifactId>
             <version>${cassandra.driver.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-when</artifactId>
-            <version>${vertx.when.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-zookeeper</artifactId>
-            <version>${vertx.zookeeper.version}</version>
-        </dependency>
 
-        <!--Provided dependencies-->
+        <!--Optional dependencies-->
         <dependency>
             <groupId>com.englishtown.vertx</groupId>
             <artifactId>vertx-hk2</artifactId>
             <version>${vertx.hk2.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.englishtown.vertx</groupId>
             <artifactId>vertx-guice</artifactId>
             <version>${vertx.guice.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.englishtown.vertx</groupId>
+            <artifactId>vertx-when</artifactId>
+            <version>${vertx.when.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.englishtown.vertx</groupId>
+            <artifactId>vertx-zookeeper</artifactId>
+            <version>${vertx.zookeeper.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!--Test dependencies-->
