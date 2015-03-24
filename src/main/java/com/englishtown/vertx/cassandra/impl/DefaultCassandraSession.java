@@ -3,8 +3,8 @@ package com.englishtown.vertx.cassandra.impl;
 import com.datastax.driver.core.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
+import com.englishtown.vertx.cassandra.FutureUtils;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.vertx.core.*;
 import io.vertx.core.logging.Logger;
@@ -109,70 +109,25 @@ public class DefaultCassandraSession implements CassandraSession {
         onReadyCallbacks.clear();
     }
 
-    @Override
-    public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        checkInitialized();
-        ResultSetFuture future = session.executeAsync(statement);
-        Futures.addCallback(future, wrapCallback(callback));
-    }
-
-    @Override
-    public void executeAsync(String query, FutureCallback<ResultSet> callback) {
-        executeAsync(new SimpleStatement(query), callback);
-    }
-
-    @Override
-    public ResultSet execute(Statement statement) {
-        checkInitialized();
-        return session.execute(statement);
-    }
-
-    @Override
-    public ResultSet execute(String query) {
-        return execute(new SimpleStatement(query));
-    }
-
-    @Override
-    public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
-        checkInitialized();
-        ListenableFuture<PreparedStatement> future = session.prepareAsync(statement);
-        Futures.addCallback(future, wrapCallback(callback));
-    }
-
-    @Override
-    public void prepareAsync(String query, FutureCallback<PreparedStatement> callback) {
-        checkInitialized();
-        ListenableFuture<PreparedStatement> future = session.prepareAsync(query);
-        Futures.addCallback(future, wrapCallback(callback));
-    }
-
-    @Override
-    public PreparedStatement prepare(RegularStatement statement) {
-        checkInitialized();
-        return session.prepare(statement);
-    }
-
-    @Override
-    public PreparedStatement prepare(String query) {
-        checkInitialized();
-        return session.prepare(query);
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Metadata getMetadata() {
         Cluster cluster = getCluster();
         return cluster == null ? null : cluster.getMetadata();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isClosed() {
         return (session == null || session.isClosed());
     }
 
     /**
-     * Returns the {@code Cluster} object this session is part of.
-     *
-     * @return the {@code Cluster} object this session is part of.
+     * {@inheritDoc}
      */
     @Override
     public Cluster getCluster() {
@@ -180,7 +135,15 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     /**
-     * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
+     * {@inheritDoc}
+     */
+    @Override
+    public State getState() {
+        return getSession().getState();
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void reconnect() {
@@ -194,9 +157,7 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     /**
-     * Flag to indicate if the the session is initialized and ready to use
-     *
-     * @return
+     * {@inheritDoc}
      */
     @Override
     public boolean initialized() {
@@ -204,9 +165,7 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     /**
-     * Callback for when the session is initialized and ready
-     *
-     * @param callback
+     * {@inheritDoc}
      */
     @Override
     public void onReady(Handler<AsyncResult<Void>> callback) {
@@ -218,13 +177,160 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     /**
-     * Returns the current underlying DataStax {@link com.datastax.driver.core.Session}
-     *
-     * @return
+     * {@inheritDoc}
      */
     @Override
     public Session getSession() {
+        checkInitialized();
         return session;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getLoggedKeyspace() {
+        return getSession().getLoggedKeyspace();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Session init() {
+        return getSession().init();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSet execute(String query) {
+        return getSession().execute(query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSet execute(String query, Object... values) {
+        return getSession().execute(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSet execute(Statement statement) {
+        return getSession().execute(statement);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSetFuture executeAsync(String query) {
+        return getSession().executeAsync(query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSetFuture executeAsync(String query, Object... values) {
+        return getSession().executeAsync(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSetFuture executeAsync(Statement statement) {
+        return getSession().executeAsync(statement);
+    }
+
+    /**
+     * Executes a cassandra statement asynchronously.  Ensures the callback is executed on the correct vert.x context.
+     *
+     * @param statement the statement to execute
+     * @param callback  the callback for on completion
+     */
+    @Override
+    public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
+        addCallback(executeAsync(statement), callback);
+    }
+
+    /**
+     * Executes a cassandra CQL query asynchronously.  Ensures the callback is executed on the correct vert.x context.
+     *
+     * @param query    the CQL query to execute
+     * @param callback the callback for on completion
+     */
+    @Override
+    public void executeAsync(String query, FutureCallback<ResultSet> callback) {
+        addCallback(executeAsync(query), callback);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PreparedStatement prepare(String query) {
+        return getSession().prepare(query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PreparedStatement prepare(RegularStatement statement) {
+        return getSession().prepare(statement);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ListenableFuture<PreparedStatement> prepareAsync(String query) {
+        return getSession().prepareAsync(query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ListenableFuture<PreparedStatement> prepareAsync(RegularStatement statement) {
+        return getSession().prepareAsync(statement);
+    }
+
+    /**
+     * Prepares the provided query statement
+     *
+     * @param statement the query statement to prepare
+     * @param callback  the callback for on completion
+     */
+    @Override
+    public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
+        addCallback(prepareAsync(statement), callback);
+    }
+
+    /**
+     * Prepares the provided query
+     *
+     * @param query    the query to prepare
+     * @param callback the callback for on completion
+     */
+    @Override
+    public void prepareAsync(String query, FutureCallback<PreparedStatement> callback) {
+        addCallback(prepareAsync(query), callback);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CloseFuture closeAsync() {
+        return getSession().closeAsync();
     }
 
     @Override
@@ -242,21 +348,8 @@ public class DefaultCassandraSession implements CassandraSession {
         clusterBuilder = null;
     }
 
-    private <V> FutureCallback<V> wrapCallback(final FutureCallback<V> callback) {
-        final Context context = vertx.getOrCreateContext();
-
-        // Make sure the callback runs on the vert.x thread
-        return new FutureCallback<V>() {
-            @Override
-            public void onSuccess(final V result) {
-                context.runOnContext(aVoid -> callback.onSuccess(result));
-            }
-
-            @Override
-            public void onFailure(final Throwable t) {
-                context.runOnContext(aVoid -> callback.onFailure(t));
-            }
-        };
+    private <V> void addCallback(final ListenableFuture<V> future, FutureCallback<V> callback) {
+        FutureUtils.addCallback(future, callback, vertx);
     }
 
     private void checkInitialized() {

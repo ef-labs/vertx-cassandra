@@ -61,11 +61,15 @@ public class DefaultCassandraSessionTest {
     @Captor
     ArgumentCaptor<Statement> statementCaptor;
     @Captor
+    ArgumentCaptor<String> queryCaptor;
+    @Captor
     ArgumentCaptor<Runnable> runnableCaptor;
     @Captor
     ArgumentCaptor<Handler<Void>> handlerCaptor;
     @Captor
     ArgumentCaptor<Handler<AsyncResult<Void>>> onReadyCaptor;
+    @Captor
+    ArgumentCaptor<Executor> executorCaptor;
 
     public static class TestLoadBalancingPolicy implements LoadBalancingPolicy {
         @Override
@@ -185,18 +189,18 @@ public class DefaultCassandraSessionTest {
 
         cassandraSession.executeAsync(statement, callback);
         verify(session).executeAsync(eq(statement));
-        verify(future).addListener(runnableCaptor.capture(), any(Executor.class));
+        verify(future).addListener(runnableCaptor.capture(), executorCaptor.capture());
 
         ResultSet resultSet = mock(ResultSet.class);
         RuntimeException e = new RuntimeException("Unit test exception");
         when(future.get()).thenReturn(resultSet).thenThrow(e);
 
-        runnableCaptor.getValue().run();
+        executorCaptor.getValue().execute(runnableCaptor.getValue());
         verify(context).runOnContext(handlerCaptor.capture());
         handlerCaptor.getValue().handle(null);
         verify(callback).onSuccess(eq(resultSet));
 
-        runnableCaptor.getValue().run();
+        executorCaptor.getValue().execute(runnableCaptor.getValue());
         verify(context, times(2)).runOnContext(handlerCaptor.capture());
         handlerCaptor.getValue().handle(null);
         verify(callback).onFailure(eq(e));
@@ -208,11 +212,11 @@ public class DefaultCassandraSessionTest {
 
         String query = "SELECT * FROM table";
         ResultSetFuture future = mock(ResultSetFuture.class);
-        when(session.executeAsync(any(Statement.class))).thenReturn(future);
+        when(session.executeAsync(anyString())).thenReturn(future);
 
         cassandraSession.executeAsync(query, callback);
-        verify(session).executeAsync(statementCaptor.capture());
-        assertEquals(query, statementCaptor.getValue().toString());
+        verify(session).executeAsync(queryCaptor.capture());
+        assertEquals(query, queryCaptor.getValue());
         verify(future).addListener(any(Runnable.class), any(Executor.class));
 
     }
@@ -223,8 +227,8 @@ public class DefaultCassandraSessionTest {
         String query = "SELECT * FROM table;";
 
         cassandraSession.execute(query);
-        verify(session).execute(statementCaptor.capture());
-        assertEquals(query, statementCaptor.getValue().toString());
+        verify(session).execute(queryCaptor.capture());
+        assertEquals(query, queryCaptor.getValue());
 
     }
 

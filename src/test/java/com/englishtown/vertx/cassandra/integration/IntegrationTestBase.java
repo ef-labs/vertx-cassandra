@@ -5,17 +5,14 @@ import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.hk2.HK2WhenCassandraBinder;
-import com.englishtown.vertx.cassandra.hk2.HK2ZooKeeperCassandraBinder;
 import com.englishtown.vertx.cassandra.keyspacebuilder.KeyspaceBuilder;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import com.englishtown.vertx.hk2.HK2VertxBinder;
 import com.englishtown.vertx.promises.hk2.HK2WhenBinder;
-import com.englishtown.vertx.zookeeper.hk2.HK2WhenZooKeeperBinder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 import org.glassfish.hk2.api.ServiceLocator;
@@ -51,8 +48,6 @@ public abstract class IntegrationTestBase extends VertxTestBase {
         ServiceLocatorUtilities.bind(locator,
                 new HK2WhenBinder(),
                 new HK2WhenCassandraBinder(),
-                new HK2ZooKeeperCassandraBinder(),
-                new HK2WhenZooKeeperBinder(),
                 new HK2VertxBinder(vertx));
 
         CountDownLatch latch = new CountDownLatch(1);

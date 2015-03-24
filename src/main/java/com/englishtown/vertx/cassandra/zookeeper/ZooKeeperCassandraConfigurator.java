@@ -1,7 +1,8 @@
-package com.englishtown.vertx.cassandra.impl;
+package com.englishtown.vertx.cassandra.zookeeper;
 
 import com.englishtown.promises.Promise;
 import com.englishtown.promises.When;
+import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.englishtown.vertx.zookeeper.ZooKeeperClient;
 import com.englishtown.vertx.zookeeper.promises.WhenConfiguratorHelper;
 import io.vertx.core.AsyncResult;
