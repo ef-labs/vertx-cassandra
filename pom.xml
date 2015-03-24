@@ -2,8 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>vertx-cassandra</artifactId>
+    <artifactId>vertx-cassandra-parent</artifactId>
+    <packaging>pom</packaging>
     <version>3.0.0-SNAPSHOT</version>
+
+    <modules>
+        <module>vertx-cassandra</module>
+        <module>vertx-cassandra-mapping</module>
+    </modules>
 
     <parent>
         <groupId>com.englishtown.vertx</groupId>
@@ -12,47 +18,57 @@
     </parent>
 
     <properties>
-        <vertx.version>3.0.0-milestone3</vertx.version>
         <cassandra.driver.version>2.1.5</cassandra.driver.version>
-        <vertx.hk2.version>2.0.0-RC1</vertx.hk2.version>
-        <vertx.guice.version>2.0.0-RC1</vertx.guice.version>
-        <vertx.when.version>4.0.0-RC1</vertx.when.version>
-        <vertx.zookeeper.version>2.0.0-RC1</vertx.zookeeper.version>
+        <vertx.version>3.0.0-milestone3</vertx.version>
+        <vertx.hk2.version>2.0.0-RC2</vertx.hk2.version>
+        <vertx.guice.version>2.0.0-RC2</vertx.guice.version>
+        <vertx.when.version>4.0.0-RC2</vertx.when.version>
+        <vertx.zookeeper.version>2.0.0-RC2</vertx.zookeeper.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-mapping</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
+            <!--Optional dependencies-->
+            <dependency>
+                <groupId>com.englishtown.vertx</groupId>
+                <artifactId>vertx-hk2</artifactId>
+                <version>${vertx.hk2.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.englishtown.vertx</groupId>
+                <artifactId>vertx-guice</artifactId>
+                <version>${vertx.guice.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.englishtown.vertx</groupId>
+                <artifactId>vertx-when</artifactId>
+                <version>${vertx.when.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.englishtown.vertx</groupId>
+                <artifactId>vertx-zookeeper</artifactId>
+                <version>${vertx.zookeeper.version}</version>
+                <optional>true</optional>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-core</artifactId>
-            <version>${cassandra.driver.version}</version>
-        </dependency>
-
-        <!--Optional dependencies-->
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-hk2</artifactId>
-            <version>${vertx.hk2.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-guice</artifactId>
-            <version>${vertx.guice.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-when</artifactId>
-            <version>${vertx.when.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-zookeeper</artifactId>
-            <version>${vertx.zookeeper.version}</version>
-            <optional>true</optional>
-        </dependency>
-
         <!--Test dependencies-->
         <dependency>
             <groupId>org.mockito</groupId>
