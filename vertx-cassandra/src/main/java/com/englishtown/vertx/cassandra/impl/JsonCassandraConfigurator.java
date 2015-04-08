@@ -38,7 +38,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONFIG_SOCKET = "socket";
     public static final String CONFIG_METRICS = "metrics";
     public static final String CONFIG_AUTH = "auth";
+    public static final String CONFIG_QUERY = "query";
     public static final String CONFIG_CONSISTENCY_LEVEL = "consistency_level";
+    public static final String CONFIG_SERIAL_CONSISTENCY_LEVEL = "serial_consistency_level";
+    public static final String CONFIG_FETCH_SIZE = "fetch_size";
 
     public static final String CONSISTENCY_ANY = "ANY";
     public static final String CONSISTENCY_ONE = "ONE";
@@ -49,6 +52,9 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONSISTENCY_LOCAL_ONE = "LOCAL_ONE";
     public static final String CONSISTENCY_LOCAL_QUORUM = "LOCAL_QUORUM";
     public static final String CONSISTENCY_EACH_QUORUM = "EACH_QUORUM";
+
+    public static final String CONSISTENCY_SERIAL = "SERIAL";
+    public static final String CONSISTENCY_LOCAL_SERIAL = "LOCAL_SERIAL";
 
     @Inject
     public JsonCassandraConfigurator(Vertx vertx) {
@@ -110,7 +116,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         initPolicies(config.getJsonObject(CONFIG_POLICIES));
         initPoolingOptions(config.getJsonObject(CONFIG_POOLING));
         initSocketOptions(config.getJsonObject(CONFIG_SOCKET));
-        initQueryOptions(config);
+        initQueryOptions(config.getJsonObject(CONFIG_QUERY, config));
         initMetricsOptions(config.getJsonObject(CONFIG_METRICS));
         initAuthProvider(config.getJsonObject(CONFIG_AUTH));
 
@@ -324,15 +330,28 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
-    protected void initQueryOptions(JsonObject config) {
+    protected void initQueryOptions(JsonObject queryConfig) {
 
-        ConsistencyLevel consistency = getConsistency(config.getString(CONFIG_CONSISTENCY_LEVEL));
-
-        if (consistency == null) {
+        if (queryConfig == null) {
             return;
         }
 
-        queryOptions = new QueryOptions().setConsistencyLevel(consistency);
+        queryOptions = new QueryOptions();
+
+        ConsistencyLevel consistency = getConsistency(queryConfig.getString(CONFIG_CONSISTENCY_LEVEL));
+        if (consistency != null) {
+            queryOptions.setConsistencyLevel(consistency);
+        }
+
+        ConsistencyLevel serialConsistency = getConsistency(queryConfig.getString(CONFIG_SERIAL_CONSISTENCY_LEVEL));
+        if (serialConsistency != null) {
+            queryOptions.setSerialConsistencyLevel(serialConsistency);
+        }
+
+        Integer fetchSize = queryConfig.getInteger(CONFIG_FETCH_SIZE);
+        if (fetchSize != null) {
+            queryOptions.setFetchSize(fetchSize);
+        }
 
     }
 
@@ -368,6 +387,12 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
         if (consistency.equalsIgnoreCase(CONSISTENCY_EACH_QUORUM)) {
             return ConsistencyLevel.EACH_QUORUM;
+        }
+        if (consistency.equalsIgnoreCase(CONSISTENCY_SERIAL)) {
+            return ConsistencyLevel.SERIAL;
+        }
+        if (consistency.equalsIgnoreCase(CONSISTENCY_LOCAL_SERIAL)) {
+            return ConsistencyLevel.LOCAL_SERIAL;
         }
 
         throw new IllegalArgumentException("'" + consistency + "' is not a valid consistency level.");

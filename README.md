@@ -27,6 +27,12 @@ The main configuration is via the normal config.json file for a Vert.x module.
     "cassandra": {
         "seeds": [<seeds>],
         
+        "query": {
+            "consistency_level": <string>,
+            "serial_consistency_level": <string>,
+            "fetch_size": <int>,
+        },
+        
         "policies": {
             "load_balancing": {
                 "name": "<lb_policy_name>",

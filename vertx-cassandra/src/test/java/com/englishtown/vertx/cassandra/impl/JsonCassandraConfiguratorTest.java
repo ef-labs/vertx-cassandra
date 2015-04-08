@@ -274,54 +274,86 @@ public class JsonCassandraConfiguratorTest {
     public void testGetQueryOptions() throws Exception {
 
         JsonCassandraConfigurator configurator;
+        QueryOptions options;
 
         configurator = new JsonCassandraConfigurator(vertx);
-        assertNull(configurator.getQueryOptions());
+        options = configurator.getQueryOptions();
+        assertNotNull(options);
+        assertEquals(QueryOptions.DEFAULT_CONSISTENCY_LEVEL, options.getConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_SERIAL_CONSISTENCY_LEVEL, options.getSerialConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_FETCH_SIZE, options.getFetchSize());
 
         config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "");
         configurator = new JsonCassandraConfigurator(vertx);
-        assertNull(configurator.getQueryOptions());
+        options = configurator.getQueryOptions();
+        assertNotNull(options);
+        assertEquals(QueryOptions.DEFAULT_CONSISTENCY_LEVEL, options.getConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_SERIAL_CONSISTENCY_LEVEL, options.getSerialConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_FETCH_SIZE, options.getFetchSize());
 
         config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ALL);
         configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.ALL, configurator.getQueryOptions().getConsistencyLevel());
+        options = configurator.getQueryOptions();
+        assertNotNull(options);
+        assertEquals(ConsistencyLevel.ALL, options.getConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_SERIAL_CONSISTENCY_LEVEL, options.getSerialConsistencyLevel());
+        assertEquals(QueryOptions.DEFAULT_FETCH_SIZE, options.getFetchSize());
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ANY);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.ANY, configurator.getQueryOptions().getConsistencyLevel());
+        config.put(JsonCassandraConfigurator.CONFIG_QUERY, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE)
+                .put(JsonCassandraConfigurator.CONFIG_SERIAL_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_SERIAL)
+                .put(JsonCassandraConfigurator.CONFIG_FETCH_SIZE, 11));
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_EACH_QUORUM);
         configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.EACH_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
+        options = configurator.getQueryOptions();
+        assertNotNull(options);
+        assertEquals(ConsistencyLevel.LOCAL_ONE, options.getConsistencyLevel());
+        assertEquals(ConsistencyLevel.LOCAL_SERIAL, options.getSerialConsistencyLevel());
+        assertEquals(11, options.getFetchSize());
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.LOCAL_ONE, configurator.getQueryOptions().getConsistencyLevel());
+    }
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.LOCAL_QUORUM, configurator.getQueryOptions().getConsistencyLevel());
+    @Test
+    public void testGetConsistencyLevel() throws Exception {
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_ONE);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.ONE, configurator.getQueryOptions().getConsistencyLevel());
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(config);
+        ConsistencyLevel consistency;
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_QUORUM);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.QUORUM, configurator.getQueryOptions().getConsistencyLevel());
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_ANY);
+        assertEquals(ConsistencyLevel.ANY, consistency);
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_THREE);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.THREE, configurator.getQueryOptions().getConsistencyLevel());
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_ONE);
+        assertEquals(ConsistencyLevel.ONE, consistency);
 
-        config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, JsonCassandraConfigurator.CONSISTENCY_TWO);
-        configurator = new JsonCassandraConfigurator(vertx);
-        assertEquals(ConsistencyLevel.TWO, configurator.getQueryOptions().getConsistencyLevel());
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_TWO);
+        assertEquals(ConsistencyLevel.TWO, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_THREE);
+        assertEquals(ConsistencyLevel.THREE, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_QUORUM);
+        assertEquals(ConsistencyLevel.QUORUM, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_ALL);
+        assertEquals(ConsistencyLevel.ALL, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_LOCAL_QUORUM);
+        assertEquals(ConsistencyLevel.LOCAL_QUORUM, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_EACH_QUORUM);
+        assertEquals(ConsistencyLevel.EACH_QUORUM, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_SERIAL);
+        assertEquals(ConsistencyLevel.SERIAL, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_LOCAL_SERIAL);
+        assertEquals(ConsistencyLevel.LOCAL_SERIAL, consistency);
+
+        consistency = configurator.getConsistency(JsonCassandraConfigurator.CONSISTENCY_LOCAL_ONE);
+        assertEquals(ConsistencyLevel.LOCAL_ONE, consistency);
 
         try {
-            config.put(JsonCassandraConfigurator.CONFIG_CONSISTENCY_LEVEL, "invalid consistency");
-            new JsonCassandraConfigurator(vertx);
-
+            configurator.getConsistency("invalid consistency");
             fail();
         } catch (IllegalArgumentException e) {
             // Expected
