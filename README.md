@@ -1,5 +1,23 @@
-# vertx-mod-cassandra
-Non-runnable module that provides functionality for talking to Cassandra.
+# vertx-cassandra
+Talk to Cassandra asynchronously from vert.x and run your callbacks on the vert.x event loop.
+
+## Getting Started
+
+Add a dependency to vertx-cassandra:
+
+```xml
+<dependency>
+    <groupId>com.englishtown.vertx</groupId>
+    <artifactId>vertx-cassandra</artifactId>
+    <version>3.0.0-RC3</version>
+</dependency>
+```
+
+vert.x           | vertx-cassandra
+---------------- | ---------------
+3.0.0-milestone3 | 3.0.0-RC3
+3.0.0-milestone2 | 3.0.0-RC2
+2.x              | 2.1.0 (vertx-mod-cassandra)
 
 ## Configuration
 The main configuration is via the normal config.json file for a Vert.x module. 
@@ -8,6 +26,12 @@ The main configuration is via the normal config.json file for a Vert.x module.
 {
     "cassandra": {
         "seeds": [<seeds>],
+        
+        "query": {
+            "consistency_level": <string>,
+            "serial_consistency_level": <string>,
+            "fetch_size": <int>,
+        },
         
         "policies": {
             "load_balancing": {
