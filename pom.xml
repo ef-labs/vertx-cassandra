@@ -4,7 +4,7 @@
 
     <artifactId>vertx-cassandra-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.0-RC4-SNAPSHOT</version>
+    <version>3.0.0-RC4</version>
 
     <modules>
         <module>vertx-cassandra</module>
