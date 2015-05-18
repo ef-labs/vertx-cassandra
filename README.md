@@ -9,12 +9,14 @@ Add a dependency to vertx-cassandra:
 <dependency>
     <groupId>com.englishtown.vertx</groupId>
     <artifactId>vertx-cassandra</artifactId>
-    <version>3.0.0-RC3</version>
+    <version>3.0.0-RC6</version>
 </dependency>
 ```
 
 vert.x           | vertx-cassandra
 ---------------- | ---------------
+3.0.0-milestone5 | 3.0.0-RC6
+3.0.0-milestone4 | 3.0.0-RC5
 3.0.0-milestone3 | 3.0.0-RC3
 3.0.0-milestone2 | 3.0.0-RC2
 2.x              | 2.1.0 (vertx-mod-cassandra)
