@@ -19,7 +19,7 @@ public class GuiceCassandraBinder extends AbstractModule {
     @Override
     protected void configure() {
 
-        bind(Cluster.Builder.class).to(Cluster.Builder.class);
+        bind(Cluster.Builder.class);
         bind(CassandraSession.class).to(DefaultCassandraSession.class).in(Singleton.class);
         bind(CassandraConfigurator.class).to(EnvironmentCassandraConfigurator.class).in(Singleton.class);
         bind(EnvironmentCassandraConfigurator.EnvVarDelegate.class).to(EnvironmentCassandraConfigurator.DefaultEnvVarDelegate.class);
