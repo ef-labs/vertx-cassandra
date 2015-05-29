@@ -2,17 +2,15 @@ package com.englishtown.vertx.cassandra.mapping.integration;
 
 import com.datastax.driver.core.Statement;
 import com.englishtown.vertx.cassandra.integration.IntegrationTestBase;
-import com.englishtown.vertx.cassandra.mapping.hk2.WhenHK2MappingBinder;
 import com.englishtown.vertx.cassandra.mapping.promises.WhenVertxMapper;
 import com.englishtown.vertx.cassandra.mapping.promises.WhenVertxMappingManager;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.junit.Test;
 
 /**
  * Cassandra driver mapping integration tests
  */
-public class WhenMappingIntegrationTest extends IntegrationTestBase {
+public abstract class WhenMappingIntegrationTest extends IntegrationTestBase {
 
     private WhenVertxMappingManager manager;
 
@@ -28,9 +26,7 @@ public class WhenMappingIntegrationTest extends IntegrationTestBase {
                 .primaryKey("id");
 
         session.execute(statement);
-
-        ServiceLocatorUtilities.bind(locator, new WhenHK2MappingBinder());
-        manager = locator.getService(WhenVertxMappingManager.class);
+        manager = getInstance(WhenVertxMappingManager.class);
 
     }
 

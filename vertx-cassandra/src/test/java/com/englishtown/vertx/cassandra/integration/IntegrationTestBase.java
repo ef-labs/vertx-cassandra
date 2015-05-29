@@ -4,20 +4,14 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.CassandraSession;
-import com.englishtown.vertx.cassandra.hk2.HK2WhenCassandraBinder;
 import com.englishtown.vertx.cassandra.keyspacebuilder.KeyspaceBuilder;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
-import com.englishtown.vertx.hk2.HK2VertxBinder;
-import com.englishtown.vertx.promises.hk2.HK2WhenBinder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.api.ServiceLocatorFactory;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -26,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public abstract class IntegrationTestBase extends VertxTestBase {
 
-    protected ServiceLocator locator;
+    private Locator locator;
     protected CassandraSession session;
     protected WhenCassandraSession whenSession;
     protected String keyspace;
@@ -37,18 +31,15 @@ public abstract class IntegrationTestBase extends VertxTestBase {
     public static final String TEST_KEYSPACE = "test_vertx_mod_cass";
 
 
+    protected abstract Locator createLocator();
+
     /**
      * Override to run additional initialization before your integration tests run
      */
+    @Override
     public void setUp() throws Exception {
         super.setUp();
-
-
-        locator = ServiceLocatorFactory.getInstance().create(null);
-        ServiceLocatorUtilities.bind(locator,
-                new HK2WhenBinder(),
-                new HK2WhenCassandraBinder(),
-                new HK2VertxBinder(vertx));
+        locator = createLocator();
 
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -61,9 +52,9 @@ public abstract class IntegrationTestBase extends VertxTestBase {
 //        String dateTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
             keyspace = TEST_KEYSPACE; //dateTime;
 
-            session = locator.getService(CassandraSession.class);
-            when = locator.getService(When.class);
-            whenSession = locator.getService(WhenCassandraSession.class);
+            session = getInstance(CassandraSession.class);
+            when = getInstance(When.class);
+            whenSession = getInstance(WhenCassandraSession.class);
 
             session.onReady(result -> {
                 if (result.failed()) {
@@ -94,6 +85,10 @@ public abstract class IntegrationTestBase extends VertxTestBase {
         });
 
         latch.await();
+    }
+
+    protected <T> T getInstance(Class<T> clazz) {
+        return locator.getInstance(clazz);
     }
 
     private void createKeyspace(Metadata metadata) {
