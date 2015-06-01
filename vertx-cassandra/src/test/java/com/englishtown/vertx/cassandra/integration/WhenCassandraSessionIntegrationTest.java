@@ -8,7 +8,7 @@ import org.junit.Test;
 /**
  * Integration test for {@link com.englishtown.vertx.cassandra.CassandraSession}
  */
-public class WhenCassandraSessionIntegrationTest extends IntegrationTestBase {
+public abstract class WhenCassandraSessionIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testExecuteAsync() throws Exception {

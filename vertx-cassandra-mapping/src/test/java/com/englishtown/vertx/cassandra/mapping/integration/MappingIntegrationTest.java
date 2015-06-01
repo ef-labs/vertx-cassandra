@@ -4,10 +4,8 @@ import com.datastax.driver.core.Statement;
 import com.englishtown.vertx.cassandra.integration.IntegrationTestBase;
 import com.englishtown.vertx.cassandra.mapping.VertxMapper;
 import com.englishtown.vertx.cassandra.mapping.VertxMappingManager;
-import com.englishtown.vertx.cassandra.mapping.hk2.HK2MappingBinder;
 import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import com.google.common.util.concurrent.FutureCallback;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.junit.Test;
 
 import java.util.function.Consumer;
@@ -15,7 +13,7 @@ import java.util.function.Consumer;
 /**
  * Cassandra driver mapping integration tests
  */
-public class MappingIntegrationTest extends IntegrationTestBase {
+public abstract class MappingIntegrationTest extends IntegrationTestBase {
 
     private VertxMappingManager manager;
 
@@ -31,9 +29,7 @@ public class MappingIntegrationTest extends IntegrationTestBase {
                 .primaryKey("id");
 
         session.execute(statement);
-
-        ServiceLocatorUtilities.bind(locator, new HK2MappingBinder());
-        manager = locator.getService(VertxMappingManager.class);
+        manager = getInstance(VertxMappingManager.class);
 
     }
 

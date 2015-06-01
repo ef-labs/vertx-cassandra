@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Integration tests for {@link com.englishtown.vertx.cassandra.tablebuilder.TableBuilder}
  */
-public class TableBuilderIntegrationTest extends IntegrationTestBase {
+public abstract class TableBuilderIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testTableBuilder() throws Exception {

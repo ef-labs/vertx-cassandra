@@ -1,15 +1,18 @@
 package com.englishtown.vertx.cassandra.integration;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.RegularStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.util.concurrent.FutureCallback;
-import org.junit.Test;
 import io.vertx.core.Context;
+import org.junit.Test;
 
 /**
  * Integration test for {@link com.englishtown.vertx.cassandra.CassandraSession}
  */
-public class CassandraSessionIntegrationTest extends IntegrationTestBase {
+public abstract class CassandraSessionIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testExecute() throws Exception {
