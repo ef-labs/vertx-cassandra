@@ -15,6 +15,7 @@ Add a dependency to vertx-cassandra:
 
 vert.x           | vertx-cassandra
 ---------------- | ---------------
+3.0.0-milestone6 | 3.0.0-RC7
 3.0.0-milestone5 | 3.0.0-RC6
 3.0.0-milestone4 | 3.0.0-RC5
 3.0.0-milestone3 | 3.0.0-RC3
