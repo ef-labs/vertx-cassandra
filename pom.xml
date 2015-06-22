@@ -18,12 +18,13 @@
     </parent>
 
     <properties>
-        <cassandra.driver.version>2.1.5</cassandra.driver.version>
-        <vertx.version>3.0.0-milestone6</vertx.version>
-        <vertx.hk2.version>2.0.0-RC5</vertx.hk2.version>
-        <vertx.guice.version>2.0.0-RC5</vertx.guice.version>
-        <vertx.when.version>4.0.0-RC5</vertx.when.version>
-        <vertx.zookeeper.version>2.0.0-RC5</vertx.zookeeper.version>
+        <cassandra.driver.version>2.1.6</cassandra.driver.version>
+        <vertx.version>3.0.0-SNAPSHOT</vertx.version>
+        <vertx.hk2.version>2.0.0-SNAPSHOT</vertx.hk2.version>
+        <vertx.guice.version>2.0.0-SNAPSHOT</vertx.guice.version>
+        <vertx.when.version>4.0.0-SNAPSHOT</vertx.when.version>
+        <vertx.zookeeper.version>2.0.0-SNAPSHOT</vertx.zookeeper.version>
+        <netty.version>4.0.28.Final</netty.version>
     </properties>
 
     <dependencyManagement>
@@ -37,6 +38,12 @@
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-mapping</artifactId>
                 <version>${cassandra.driver.version}</version>
+            </dependency>
+            <!-- Use the same version of netty as vert.x -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
             </dependency>
 
             <!--Optional dependencies-->

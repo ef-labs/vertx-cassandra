@@ -50,8 +50,6 @@ The main configuration is via the normal config.json file for a Vert.x module.
             "core_connections_per_host_remote": <int>,
             "max_connections_per_host_local": <int>,
             "max_connections_per_host_remote": <int>,
-            "min_simultaneous_requests_local": <int>,
-            "min_simultaneous_requests_remote": <int>,
             "max_simultaneous_requests_local": <int>,
             "max_simultaneous_requests_remote": <int>
         },

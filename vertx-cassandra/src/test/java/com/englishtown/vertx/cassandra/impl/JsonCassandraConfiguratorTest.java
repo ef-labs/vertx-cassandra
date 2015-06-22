@@ -217,10 +217,8 @@ public class JsonCassandraConfiguratorTest {
                         .put("core_connections_per_host_remote", 2)
                         .put("max_connections_per_host_local", 3)
                         .put("max_connections_per_host_remote", 4)
-                        .put("min_simultaneous_requests_local", 5)
-                        .put("min_simultaneous_requests_remote", 6)
-                        .put("max_simultaneous_requests_local", 7)
-                        .put("max_simultaneous_requests_remote", 8)
+                        .put("max_simultaneous_requests_local", 5)
+                        .put("max_simultaneous_requests_remote", 6)
         );
 
         configurator = new JsonCassandraConfigurator(vertx);
@@ -231,10 +229,8 @@ public class JsonCassandraConfiguratorTest {
         assertEquals(2, options.getCoreConnectionsPerHost(HostDistance.REMOTE));
         assertEquals(3, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
         assertEquals(4, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
-        assertEquals(5, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-        assertEquals(6, options.getMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
-        assertEquals(7, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-        assertEquals(8, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+        assertEquals(5, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(6, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
 
     }
 

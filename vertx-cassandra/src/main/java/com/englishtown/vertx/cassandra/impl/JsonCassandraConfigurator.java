@@ -254,8 +254,6 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         Integer core_connections_per_host_remote = poolingConfig.getInteger("core_connections_per_host_remote");
         Integer max_connections_per_host_local = poolingConfig.getInteger("max_connections_per_host_local");
         Integer max_connections_per_host_remote = poolingConfig.getInteger("max_connections_per_host_remote");
-        Integer min_simultaneous_requests_local = poolingConfig.getInteger("min_simultaneous_requests_local");
-        Integer min_simultaneous_requests_remote = poolingConfig.getInteger("min_simultaneous_requests_remote");
         Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
         Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
 
@@ -270,12 +268,6 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
         if (max_connections_per_host_remote != null) {
             poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, max_connections_per_host_remote);
-        }
-        if (min_simultaneous_requests_local != null) {
-            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, min_simultaneous_requests_local);
-        }
-        if (min_simultaneous_requests_remote != null) {
-            poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, min_simultaneous_requests_remote);
         }
         if (max_simultaneous_requests_local != null) {
             poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local);
