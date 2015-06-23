@@ -19,12 +19,13 @@
 
     <properties>
         <cassandra.driver.version>2.1.6</cassandra.driver.version>
-        <vertx.version>3.0.0-SNAPSHOT</vertx.version>
-        <vertx.hk2.version>2.0.0-SNAPSHOT</vertx.hk2.version>
-        <vertx.guice.version>2.0.0-SNAPSHOT</vertx.guice.version>
-        <vertx.when.version>4.0.0-SNAPSHOT</vertx.when.version>
-        <vertx.zookeeper.version>2.0.0-SNAPSHOT</vertx.zookeeper.version>
+        <vertx.version>3.0.0</vertx.version>
+        <vertx.hk2.version>2.0.0</vertx.hk2.version>
+        <vertx.guice.version>2.0.0</vertx.guice.version>
+        <vertx.when.version>4.0.0</vertx.when.version>
+        <vertx.zookeeper.version>2.0.0</vertx.zookeeper.version>
         <netty.version>4.0.28.Final</netty.version>
+        <maven.jgitflow.plugin.version>1.0-m5.1</maven.jgitflow.plugin.version>
     </properties>
 
     <dependencyManagement>
