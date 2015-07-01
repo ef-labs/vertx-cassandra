@@ -9,7 +9,7 @@ Add a dependency to vertx-cassandra:
 <dependency>
     <groupId>com.englishtown.vertx</groupId>
     <artifactId>vertx-cassandra</artifactId>
-    <version>3.0.0-RC6</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
