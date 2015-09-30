@@ -37,7 +37,7 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues(ProtocolVersion protocolVersion) {
+    public ByteBuffer[] getValues() {
         return null;
     }
 

@@ -35,7 +35,7 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues(ProtocolVersion protocolVersion) {
+    public ByteBuffer[] getValues() {
         return null;
     }
 

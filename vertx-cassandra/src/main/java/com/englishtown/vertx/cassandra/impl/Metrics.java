@@ -255,10 +255,6 @@ class Metrics implements AutoCloseable {
             downHosts.remove(key);
         }
 
-        @Override
-        public void onSuspected(Host host) {
-        }
-
         /**
          * Called when a node is determined to be down.
          *
@@ -281,6 +277,14 @@ class Metrics implements AutoCloseable {
             String key = getKey(host);
             removedHosts.put(key, host);
             addedHosts.remove(key);
+        }
+
+        @Override
+        public void onRegister(Cluster cluster) {
+        }
+
+        @Override
+        public void onUnregister(Cluster cluster) {
         }
     }
 }

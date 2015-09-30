@@ -297,6 +297,16 @@ public class DefaultCassandraSession implements CassandraSession {
         return getSession().prepare(statement);
     }
 
+    @Override
+    public SimpleStatement newSimpleStatement(String s) {
+        return getSession().newSimpleStatement(s);
+    }
+
+    @Override
+    public SimpleStatement newSimpleStatement(String s, Object... objects) {
+        return getSession().newSimpleStatement(s, objects);
+    }
+
     /**
      * {@inheritDoc}
      */

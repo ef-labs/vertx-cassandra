@@ -45,7 +45,7 @@ public class DefaultVertxMappingManagerTest {
         when(metadata.getKeyspace(anyString())).thenReturn(keyspaceMetadata);
         when(cluster.getConfiguration()).thenReturn(configuration);
         when(configuration.getProtocolOptions()).thenReturn(protocolOptions);
-        when(protocolOptions.getProtocolVersionEnum()).thenReturn(ProtocolVersion.NEWEST_SUPPORTED);
+        when(protocolOptions.getProtocolVersion()).thenReturn(ProtocolVersion.NEWEST_SUPPORTED);
 
         manager = new DefaultVertxMappingManager(session);
 

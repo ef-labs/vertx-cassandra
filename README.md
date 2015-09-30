@@ -13,10 +13,11 @@ Add a dependency to vertx-cassandra:
 </dependency>
 ```
 
-vert.x    | vertx-cassandra
---------- | ---------------
-3.0.0     | 3.0.0
-2.x       | 2.1.0 (vertx-mod-cassandra)
+vert.x    | cassandra | vertx-cassandra
+--------- | --------- | ---------------
+3.0.0     |   2.2     | 3.1.0
+3.0.0     |   2.1     | 3.0.0
+2.x       |   2.1     | 2.1.0 (vertx-mod-cassandra)
 
 ## Configuration
 The main configuration is via the normal config.json file for a Vert.x module. 

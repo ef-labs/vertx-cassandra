@@ -34,7 +34,7 @@ public class DefaultCassandraSessionTest {
 
     DefaultCassandraSession cassandraSession;
     List<String> seeds = new ArrayList<>();
-    Configuration configuration = new Configuration();
+    Configuration configuration = Configuration.builder().build();
 
     @Mock
     Vertx vertx;
@@ -95,15 +95,16 @@ public class DefaultCassandraSessionTest {
         }
 
         @Override
-        public void onSuspected(Host host) {
-        }
-
-        @Override
         public void onDown(Host host) {
         }
 
         @Override
         public void onRemove(Host host) {
+        }
+
+        @Override
+        public void close() {
+
         }
     }
 
@@ -234,7 +235,7 @@ public class DefaultCassandraSessionTest {
 
     @Test
     public void testPrepareAsync_Statement() throws Exception {
-        RegularStatement statement = QueryBuilder
+        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
                 .select()
                 .from("ks", "table")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
@@ -254,7 +255,7 @@ public class DefaultCassandraSessionTest {
 
     @Test
     public void testPrepare_Statement() throws Exception {
-        RegularStatement statement = QueryBuilder
+        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
                 .select()
                 .from("ks", "table")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
