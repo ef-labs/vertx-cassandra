@@ -55,15 +55,16 @@ public class JsonCassandraConfiguratorTest {
         }
 
         @Override
-        public void onSuspected(Host host) {
-        }
-
-        @Override
         public void onDown(Host host) {
         }
 
         @Override
         public void onRemove(Host host) {
+        }
+
+        @Override
+        public void close() {
+
         }
     }
 
@@ -71,6 +72,16 @@ public class JsonCassandraConfiguratorTest {
         @Override
         public ReconnectionSchedule newSchedule() {
             return null;
+        }
+
+        @Override
+        public void init(Cluster cluster) {
+
+        }
+
+        @Override
+        public void close() {
+
         }
     }
 

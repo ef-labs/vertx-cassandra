@@ -1,7 +1,9 @@
 package com.englishtown.vertx.cassandra.integration;
 
 import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -19,7 +21,7 @@ public abstract class CassandraSessionIntegrationTest extends IntegrationTestBas
 
         session.execute(createTestTableStatement);
 
-        RegularStatement statement = QueryBuilder
+        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
                 .select()
                 .from(keyspace, "test")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));

@@ -18,7 +18,7 @@
     </parent>
 
     <properties>
-        <cassandra.driver.version>2.1.8</cassandra.driver.version>
+        <cassandra.driver.version>2.2.0-rc3</cassandra.driver.version>
         <vertx.hk2.version>2.1.0</vertx.hk2.version>
         <vertx.guice.version>2.1.0</vertx.guice.version>
         <vertx.when.version>4.1.0</vertx.when.version>
