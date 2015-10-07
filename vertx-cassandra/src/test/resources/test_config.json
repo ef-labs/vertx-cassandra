@@ -1,5 +1,6 @@
 {
     "cassandra": {
+        "seeds": [${cassandra.seeds}],
         "auth": {
             "username": "cassandra",
             "password": "cassandra"
