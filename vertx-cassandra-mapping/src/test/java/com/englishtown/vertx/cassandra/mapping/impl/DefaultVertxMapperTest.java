@@ -8,6 +8,7 @@ import io.vertx.core.Vertx;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -47,6 +48,7 @@ public class DefaultVertxMapperTest {
         when(rawMapper.saveAsync(eq(entity))).thenReturn(voidFuture);
         when(rawMapper.deleteAsync(eq(entity))).thenReturn(voidFuture);
         when(rawMapper.deleteAsync(any(), any())).thenReturn(voidFuture);
+        when(rawMapper.deleteAsync(Matchers.<Object>anyVararg())).thenReturn(voidFuture);
         when(rawMapper.getAsync(any(), any())).thenReturn(entityFuture);
 
     }
