@@ -124,7 +124,7 @@
                 </property>
             </activation>
             <properties>
-                <cassandra.seeds></cassandra.seeds>
+                <cassandra.seeds />
             </properties>
         </profile>
     </profiles>
