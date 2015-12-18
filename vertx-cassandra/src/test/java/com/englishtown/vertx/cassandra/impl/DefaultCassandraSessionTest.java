@@ -235,8 +235,7 @@ public class DefaultCassandraSessionTest {
 
     @Test
     public void testPrepareAsync_Statement() throws Exception {
-        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
-                .select()
+        RegularStatement statement = QueryBuilder.select()
                 .from("ks", "table")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
 
@@ -255,8 +254,7 @@ public class DefaultCassandraSessionTest {
 
     @Test
     public void testPrepare_Statement() throws Exception {
-        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
-                .select()
+        RegularStatement statement = QueryBuilder.select()
                 .from("ks", "table")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
 

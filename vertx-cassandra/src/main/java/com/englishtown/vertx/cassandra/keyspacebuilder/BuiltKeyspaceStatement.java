@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.keyspacebuilder;
 
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
@@ -35,7 +36,7 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues() {
+    public ByteBuffer[] getValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
         return null;
     }
 
@@ -51,7 +52,15 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer getRoutingKey() {
+    public boolean hasValues(CodecRegistry codecRegistry) {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ByteBuffer getRoutingKey(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
         return null;
     }
 
@@ -62,4 +71,13 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
     public String getKeyspace() {
         return keyspace;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getQueryString(CodecRegistry codecRegistry) {
+        return null;
+    }
+
 }

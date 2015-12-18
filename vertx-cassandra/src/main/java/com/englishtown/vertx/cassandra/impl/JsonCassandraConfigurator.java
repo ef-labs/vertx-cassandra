@@ -167,7 +167,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
                 throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
             }
 
-            loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDc, usedHostsPerRemoteDc);
+            loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
+                    .withLocalDc(localDc)
+                    .withUsedHostsPerRemoteDc(usedHostsPerRemoteDc)
+                    .build();
 
         } else {
 
@@ -396,8 +399,9 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
             return;
         }
 
+        boolean enabled = metrics.getBoolean("enabled", true);
         boolean jmx_enabled = metrics.getBoolean("jmx_enabled", true);
-        metricsOptions = new MetricsOptions(jmx_enabled);
+        metricsOptions = new MetricsOptions(enabled, jmx_enabled);
 
     }
 

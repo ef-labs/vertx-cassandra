@@ -156,6 +156,29 @@ public class DefaultCassandraSession implements CassandraSession {
         metrics.afterReconnect();
     }
 
+    @Override
+    public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
+        logger.debug("Call to reconnect the session has been made");
+        Session oldSession = session;
+        // TODO: connnectAsync()
+        FutureUtils.addCallback(cluster.connectAsync(), new FutureCallback<Session>() {
+            @Override
+            public void onSuccess(Session session) {
+                DefaultCassandraSession.this.session = session;
+                if (oldSession != null) {
+                    oldSession.closeAsync();
+                }
+                callback.handle(Future.succeededFuture());
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                callback.handle(Future.failedFuture(throwable));
+            }
+        }, vertx);
+        metrics.afterReconnect();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -209,6 +232,11 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public Session init() {
         return getSession().init();
+    }
+
+    @Override
+    public ListenableFuture<Session> initAsync() {
+        return getSession().initAsync();
     }
 
     /**
@@ -295,16 +323,6 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public PreparedStatement prepare(RegularStatement statement) {
         return getSession().prepare(statement);
-    }
-
-    @Override
-    public SimpleStatement newSimpleStatement(String s) {
-        return getSession().newSimpleStatement(s);
-    }
-
-    @Override
-    public SimpleStatement newSimpleStatement(String s, Object... objects) {
-        return getSession().newSimpleStatement(s, objects);
     }
 
     /**

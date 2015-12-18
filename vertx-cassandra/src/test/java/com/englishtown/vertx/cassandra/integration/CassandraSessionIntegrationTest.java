@@ -21,8 +21,7 @@ public abstract class CassandraSessionIntegrationTest extends IntegrationTestBas
 
         session.execute(createTestTableStatement);
 
-        RegularStatement statement = new QueryBuilder(ProtocolVersion.V4, CodecRegistry.DEFAULT_INSTANCE)
-                .select()
+        RegularStatement statement = QueryBuilder.select()
                 .from(keyspace, "test")
                 .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
 

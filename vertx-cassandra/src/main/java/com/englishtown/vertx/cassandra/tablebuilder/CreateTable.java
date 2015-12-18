@@ -1,5 +1,9 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.core.ProtocolVersion;
+
+import java.nio.ByteBuffer;
 import java.util.*;
 
 /**

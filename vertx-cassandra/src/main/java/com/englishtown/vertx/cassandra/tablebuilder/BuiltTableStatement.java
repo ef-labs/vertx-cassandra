@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
@@ -37,7 +38,7 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer[] getValues() {
+    public ByteBuffer[] getValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
         return null;
     }
 
@@ -45,16 +46,8 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public boolean hasValues() {
+    public boolean hasValues(CodecRegistry codecRegistry) {
         return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ByteBuffer getRoutingKey() {
-        return null;
     }
 
     /**
@@ -72,6 +65,19 @@ public abstract class BuiltTableStatement extends RegularStatement {
      */
     public String getTable() {
         return table;
+    }
+
+    @Override
+    public String getQueryString(CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ByteBuffer getRoutingKey(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
+        return null;
     }
 
     /**

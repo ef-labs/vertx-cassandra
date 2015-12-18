@@ -1,5 +1,7 @@
 package com.englishtown.vertx.cassandra.keyspacebuilder;
 
+import com.datastax.driver.core.CodecRegistry;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -71,5 +73,6 @@ abstract class KeyspaceBuilderBase extends BuiltKeyspaceStatement {
         public StringBuilder buildQueryString() {
             return KeyspaceBuilderBase.this.buildQueryString();
         }
+
     }
 }
