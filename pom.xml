@@ -18,13 +18,15 @@
     </parent>
 
     <properties>
-        <cassandra.driver.version>3.0.0-beta1</cassandra.driver.version>
+        <cassandra.driver.version>3.0.0-rc1</cassandra.driver.version>
+        <vertx.version>3.2.0</vertx.version>
         <vertx.hk2.version>2.1.0</vertx.hk2.version>
         <vertx.guice.version>2.1.0</vertx.guice.version>
         <vertx.when.version>4.1.0</vertx.when.version>
         <vertx.zookeeper.version>2.1.0</vertx.zookeeper.version>
-        <netty.version>4.0.31.Final</netty.version>
+        <netty.version>4.0.33.Final</netty.version>
         <maven.jgitflow.plugin.version>1.0-m5.1</maven.jgitflow.plugin.version>
+        <maven.jar.plugin.version>2.6</maven.jar.plugin.version>
     </properties>
 
     <dependencyManagement>

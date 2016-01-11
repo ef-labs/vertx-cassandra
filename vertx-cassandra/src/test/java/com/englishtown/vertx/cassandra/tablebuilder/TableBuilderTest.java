@@ -3,16 +3,68 @@ package com.englishtown.vertx.cassandra.tablebuilder;
 import com.datastax.driver.core.ColumnMetadata;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.TableMetadata;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TableBuilderTest {
+
+    @Mock
+    private TableMetadata existing;
+    @Mock
+    private ColumnMetadata col1;
+    @Mock
+    private ColumnMetadata col2;
+
+    private Map<String, ColumnMetadata> columns = new HashMap<>();
+
+    @Before
+    public void setUp() throws Exception {
+        if (!setUpColumns()) {
+            throw new IllegalStateException("Could not set up columns");
+        }
+
+        columns.put("col1", col1);
+        when(col1.getType()).thenReturn(DataType.text());
+
+        columns.put("col2", col2);
+        when(col2.getType()).thenReturn(DataType.cint());
+
+    }
+
+    private boolean setUpColumns() throws Exception {
+
+        // Need to set columns as of DSE 3.0....sigh
+        Class<?> clazz = existing.getClass();
+
+        while (clazz != Object.class) {
+            Field[] fields = clazz.getDeclaredFields();
+
+            for (Field field : fields) {
+                if (field.getName().equals("columns")) {
+                    field.setAccessible(true);
+                    field.set(existing, columns);
+                    return true;
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+
+        return false;
+    }
 
     @Test
     public void testAlter() throws Exception {
@@ -23,16 +75,6 @@ public class TableBuilderTest {
                 .column("col3", "int")
                 .column("col4", "text")
                 .primaryKey("col1");
-
-        TableMetadata existing = mock(TableMetadata.class);
-
-        ColumnMetadata col1 = mock(ColumnMetadata.class);
-        when(existing.getColumn(eq("col1"))).thenReturn(col1);
-        when(col1.getType()).thenReturn(DataType.text());
-
-        ColumnMetadata col2 = mock(ColumnMetadata.class);
-        when(existing.getColumn(eq("col2"))).thenReturn(col2);
-        when(col2.getType()).thenReturn(DataType.cint());
 
         List<AlterTable> statements = TableBuilder.alter(existing, desired);
 

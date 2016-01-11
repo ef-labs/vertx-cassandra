@@ -6,6 +6,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import io.vertx.core.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -111,11 +112,18 @@ public class DefaultCassandraSessionTest {
     @Before
     public void setUp() {
 
-        when(vertx.getOrCreateContext()).thenReturn(context).thenReturn(null);
+        SettableFuture<Session> sessionFuture = SettableFuture.create();
+
+        when(vertx.getOrCreateContext()).thenReturn(context);
+        doAnswer(invocation -> {
+            Handler<Void> handler = (Handler<Void>) invocation.getArguments()[0];
+            handler.handle(null);
+            return null;
+        }).when(context).runOnContext(any());
 
         when(clusterBuilder.build()).thenReturn(cluster);
         when(cluster.getConfiguration()).thenReturn(configuration);
-        when(cluster.connect()).thenReturn(session);
+        when(cluster.connectAsync()).thenReturn(sessionFuture);
         when(cluster.getMetadata()).thenReturn(metadata);
         when(cluster.closeAsync()).thenReturn(closeFuture);
         when(closeFuture.force()).thenReturn(closeFuture);
@@ -131,6 +139,9 @@ public class DefaultCassandraSessionTest {
 
         verify(configurator).onReady(onReadyCaptor.capture());
         onReadyCaptor.getValue().handle(Future.succeededFuture(null));
+
+        sessionFuture.set(session);
+
     }
 
     @Test
@@ -157,7 +168,7 @@ public class DefaultCassandraSessionTest {
         verify(clusterBuilder).withLoadBalancingPolicy(eq(lbPolicy));
         verify(clusterBuilder).withPoolingOptions(eq(poolingOptions));
         verify(clusterBuilder, times(2)).build();
-        verify(cluster, times(2)).connect();
+        verify(cluster, times(2)).connectAsync();
 
         verify(cluster, times(0)).getMetadata();
         cassandraSession.getMetadata();
@@ -197,14 +208,14 @@ public class DefaultCassandraSessionTest {
         when(future.get()).thenReturn(resultSet).thenThrow(e);
 
         executorCaptor.getValue().execute(runnableCaptor.getValue());
-        verify(context).runOnContext(handlerCaptor.capture());
+        verify(context, times(2)).runOnContext(handlerCaptor.capture());
         handlerCaptor.getValue().handle(null);
         verify(callback).onSuccess(eq(resultSet));
 
         executorCaptor.getValue().execute(runnableCaptor.getValue());
-        verify(context, times(2)).runOnContext(handlerCaptor.capture());
+        verify(context, times(3)).runOnContext(handlerCaptor.capture());
         handlerCaptor.getValue().handle(null);
-        verify(callback).onFailure(eq(e));
+        verify(callback, times(3)).onFailure(eq(e));
 
     }
 

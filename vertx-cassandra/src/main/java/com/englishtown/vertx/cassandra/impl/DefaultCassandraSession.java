@@ -98,9 +98,14 @@ public class DefaultCassandraSession implements CassandraSession {
 
         // Build cluster and connect
         cluster = clusterBuilder.build();
-        reconnect();
+        reconnectAsync(result -> {
+            if (result.succeeded()) {
+                runOnReadyCallbacks(Future.succeededFuture());
+            } else {
+                runOnReadyCallbacks(Future.failedFuture(result.cause()));
+            }
+        });
 
-        runOnReadyCallbacks(Future.succeededFuture(null));
     }
 
     private void runOnReadyCallbacks(AsyncResult<Void> result) {
@@ -160,7 +165,6 @@ public class DefaultCassandraSession implements CassandraSession {
     public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
         logger.debug("Call to reconnect the session has been made");
         Session oldSession = session;
-        // TODO: connnectAsync()
         FutureUtils.addCallback(cluster.connectAsync(), new FutureCallback<Session>() {
             @Override
             public void onSuccess(Session session) {
@@ -169,6 +173,7 @@ public class DefaultCassandraSession implements CassandraSession {
                     oldSession.closeAsync();
                 }
                 callback.handle(Future.succeededFuture());
+                metrics.afterReconnect();
             }
 
             @Override
@@ -176,7 +181,6 @@ public class DefaultCassandraSession implements CassandraSession {
                 callback.handle(Future.failedFuture(throwable));
             }
         }, vertx);
-        metrics.afterReconnect();
     }
 
     /**

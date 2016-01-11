@@ -36,6 +36,14 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
+    public String getQueryString(CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ByteBuffer[] getValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
         return null;
     }
@@ -71,13 +79,4 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
     public String getKeyspace() {
         return keyspace;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getQueryString(CodecRegistry codecRegistry) {
-        return null;
-    }
-
 }

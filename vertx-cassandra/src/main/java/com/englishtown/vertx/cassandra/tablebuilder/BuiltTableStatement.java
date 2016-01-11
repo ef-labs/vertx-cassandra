@@ -34,6 +34,11 @@ public abstract class BuiltTableStatement extends RegularStatement {
         return buildQueryString().toString();
     }
 
+    @Override
+    public String getQueryString(CodecRegistry codecRegistry) {
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -54,6 +59,14 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
+    public ByteBuffer getRoutingKey(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getKeyspace() {
         return keyspace;
     }
@@ -65,19 +78,6 @@ public abstract class BuiltTableStatement extends RegularStatement {
      */
     public String getTable() {
         return table;
-    }
-
-    @Override
-    public String getQueryString(CodecRegistry codecRegistry) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ByteBuffer getRoutingKey(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
-        return null;
     }
 
     /**

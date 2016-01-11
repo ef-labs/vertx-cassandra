@@ -41,21 +41,11 @@ class Metrics implements AutoCloseable {
         String name = "config";
         final String config = getConfiguration(session.getConfigurator(), configuration).encodePrettily();
         registry.remove(name);
-        registry.register(name, new Gauge<String>() {
-            @Override
-            public String getValue() {
-                return config;
-            }
-        });
+        registry.<Gauge<String>>register(name, () -> config);
 
         name = "closed";
         registry.remove(name);
-        registry.register(name, new Gauge<Boolean>() {
-            @Override
-            public Boolean getValue() {
-                return session.isClosed();
-            }
-        });
+        registry.<Gauge<Boolean>>register(name, () -> session.isClosed());
 
         listener = new GaugeStateListener();
         cluster.register(listener);
@@ -107,8 +97,8 @@ class Metrics implements AutoCloseable {
             pooling.put("max_connections_per_host_local", poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL));
             pooling.put("max_connections_per_host_remote", poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE));
 
-            pooling.put("max_simultaneous_requests_local", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-            pooling.put("max_simultaneous_requests_remote", poolingOptions.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+            pooling.put("new_connection_threshold_local", poolingOptions.getNewConnectionThreshold(HostDistance.LOCAL));
+            pooling.put("new_connection_threshold_remote", poolingOptions.getNewConnectionThreshold(HostDistance.REMOTE));
         }
 
         SocketOptions socketOptions = configuration.getSocketOptions();
@@ -166,39 +156,19 @@ class Metrics implements AutoCloseable {
 
             name = "added-hosts";
             registry.remove(name);
-            registry.register(name, new Gauge<String>() {
-                @Override
-                public String getValue() {
-                    return stringify(addedHosts);
-                }
-            });
+            registry.<Gauge<String>>register(name, () -> stringify(addedHosts));
 
             name = "up-hosts";
             registry.remove(name);
-            registry.register(name, new Gauge<String>() {
-                @Override
-                public String getValue() {
-                    return stringify(upHosts);
-                }
-            });
+            registry.<Gauge<String>>register(name, () -> stringify(upHosts));
 
             name = "down-hosts";
             registry.remove(name);
-            registry.register(name, new Gauge<String>() {
-                @Override
-                public String getValue() {
-                    return stringify(downHosts);
-                }
-            });
+            registry.<Gauge<String>>register(name, () -> stringify(downHosts));
 
             name = "removed-hosts";
             registry.remove(name);
-            registry.register(name, new Gauge<String>() {
-                @Override
-                public String getValue() {
-                    return stringify(removedHosts);
-                }
-            });
+            registry.<Gauge<String>>register(name, () -> stringify(removedHosts));
 
         }
 

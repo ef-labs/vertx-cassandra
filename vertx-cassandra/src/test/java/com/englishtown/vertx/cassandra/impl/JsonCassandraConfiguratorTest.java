@@ -240,8 +240,8 @@ public class JsonCassandraConfiguratorTest {
         assertEquals(2, options.getCoreConnectionsPerHost(HostDistance.REMOTE));
         assertEquals(3, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
         assertEquals(4, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
-        assertEquals(5, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL));
-        assertEquals(6, options.getMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE));
+        assertEquals(5, options.getNewConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(6, options.getNewConnectionThreshold(HostDistance.REMOTE));
 
     }
 
