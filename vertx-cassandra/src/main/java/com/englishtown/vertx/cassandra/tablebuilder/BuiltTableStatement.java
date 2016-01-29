@@ -1,9 +1,11 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 /**
  * Builds a CQL3 statement to manipulate tables
@@ -33,11 +35,8 @@ public abstract class BuiltTableStatement extends RegularStatement {
         return buildQueryString().toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public ByteBuffer[] getValues(ProtocolVersion protocolVersion) {
+    public String getQueryString(CodecRegistry codecRegistry) {
         return null;
     }
 
@@ -45,7 +44,15 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public boolean hasValues() {
+    public ByteBuffer[] getValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasValues(CodecRegistry codecRegistry) {
         return false;
     }
 
@@ -53,7 +60,7 @@ public abstract class BuiltTableStatement extends RegularStatement {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer getRoutingKey() {
+    public ByteBuffer getRoutingKey(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
         return null;
     }
 
@@ -72,6 +79,22 @@ public abstract class BuiltTableStatement extends RegularStatement {
      */
     public String getTable() {
         return table;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, ByteBuffer> getNamedValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean usesNamedValues() {
+        return false;
     }
 
     /**

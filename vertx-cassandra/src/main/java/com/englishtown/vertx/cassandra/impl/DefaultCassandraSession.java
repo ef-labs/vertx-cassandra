@@ -13,6 +13,7 @@ import io.vertx.core.logging.LoggerFactory;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Default implementation of {@link CassandraSession}
@@ -98,9 +99,14 @@ public class DefaultCassandraSession implements CassandraSession {
 
         // Build cluster and connect
         cluster = clusterBuilder.build();
-        reconnect();
+        reconnectAsync(result -> {
+            if (result.succeeded()) {
+                runOnReadyCallbacks(Future.succeededFuture());
+            } else {
+                runOnReadyCallbacks(Future.failedFuture(result.cause()));
+            }
+        });
 
-        runOnReadyCallbacks(Future.succeededFuture(null));
     }
 
     private void runOnReadyCallbacks(AsyncResult<Void> result) {
@@ -154,6 +160,28 @@ public class DefaultCassandraSession implements CassandraSession {
             oldSession.closeAsync();
         }
         metrics.afterReconnect();
+    }
+
+    @Override
+    public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
+        logger.debug("Call to reconnect the session has been made");
+        Session oldSession = session;
+        FutureUtils.addCallback(cluster.connectAsync(), new FutureCallback<Session>() {
+            @Override
+            public void onSuccess(Session session) {
+                DefaultCassandraSession.this.session = session;
+                if (oldSession != null) {
+                    oldSession.closeAsync();
+                }
+                callback.handle(Future.succeededFuture());
+                metrics.afterReconnect();
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                callback.handle(Future.failedFuture(throwable));
+            }
+        }, vertx);
     }
 
     /**
@@ -211,6 +239,11 @@ public class DefaultCassandraSession implements CassandraSession {
         return getSession().init();
     }
 
+    @Override
+    public ListenableFuture<Session> initAsync() {
+        return getSession().initAsync();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -224,6 +257,14 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public ResultSet execute(String query, Object... values) {
+        return getSession().execute(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSet execute(String query, Map<String, Object> values) {
         return getSession().execute(query, values);
     }
 
@@ -248,6 +289,14 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public ResultSetFuture executeAsync(String query, Object... values) {
+        return getSession().executeAsync(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSetFuture executeAsync(String query, Map<String, Object> values) {
         return getSession().executeAsync(query, values);
     }
 

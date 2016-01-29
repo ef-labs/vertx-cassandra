@@ -66,7 +66,9 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
 
             if (!Strings.isNullOrEmpty(localDC)) {
                 logger.debug("Using environment config for Local DC of " + localDC);
-                loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDC);
+                loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
+                        .withLocalDc(localDC)
+                        .build();
             } else {
                 logger.debug("No environment configuration found for local DC");
             }

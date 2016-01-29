@@ -56,6 +56,11 @@ public interface CassandraSession extends Session, AutoCloseable {
     void reconnect();
 
     /**
+     * Reconnects to the cluster with a new session.  Any existing session is closed asynchronously.
+     */
+    void reconnectAsync(Handler<AsyncResult<Void>> callback);
+
+    /**
      * Flag to indicate if the the session is initialized and ready to use
      *
      * @return

@@ -167,7 +167,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
                 throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
             }
 
-            loadBalancingPolicy = new DCAwareRoundRobinPolicy(localDc, usedHostsPerRemoteDc);
+            loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
+                    .withLocalDc(localDc)
+                    .withUsedHostsPerRemoteDc(usedHostsPerRemoteDc)
+                    .build();
 
         } else {
 
@@ -254,8 +257,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         Integer core_connections_per_host_remote = poolingConfig.getInteger("core_connections_per_host_remote");
         Integer max_connections_per_host_local = poolingConfig.getInteger("max_connections_per_host_local");
         Integer max_connections_per_host_remote = poolingConfig.getInteger("max_connections_per_host_remote");
-        Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
-        Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
+        Integer new_connection_threshold_local = poolingConfig.getInteger("new_connection_threshold_local");
+        Integer new_connection_threshold_remote = poolingConfig.getInteger("new_connection_threshold_remote");
 
         if (core_connections_per_host_local != null) {
             poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, core_connections_per_host_local);
@@ -269,11 +272,21 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         if (max_connections_per_host_remote != null) {
             poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, max_connections_per_host_remote);
         }
-        if (max_simultaneous_requests_local != null) {
-            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local);
+        if (new_connection_threshold_local != null) {
+            poolingOptions.setNewConnectionThreshold(HostDistance.LOCAL, new_connection_threshold_local);
+        } else {
+            Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
+            if (max_simultaneous_requests_local != null) {
+                poolingOptions.setNewConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local);
+            }
         }
-        if (max_simultaneous_requests_remote != null) {
-            poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote);
+        if (new_connection_threshold_remote != null) {
+            poolingOptions.setNewConnectionThreshold(HostDistance.REMOTE, new_connection_threshold_remote);
+        } else {
+            Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
+            if (max_simultaneous_requests_remote != null) {
+                poolingOptions.setNewConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote);
+            }
         }
 
     }
@@ -396,8 +409,9 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
             return;
         }
 
+        boolean enabled = metrics.getBoolean("enabled", true);
         boolean jmx_enabled = metrics.getBoolean("jmx_enabled", true);
-        metricsOptions = new MetricsOptions(jmx_enabled);
+        metricsOptions = new MetricsOptions(enabled, jmx_enabled);
 
     }
 

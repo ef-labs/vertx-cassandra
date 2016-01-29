@@ -1,5 +1,6 @@
 package com.englishtown.vertx.cassandra.tablebuilder;
 
+import com.datastax.driver.core.AbstractTableMetadata;
 import com.datastax.driver.core.ColumnMetadata;
 import com.datastax.driver.core.TableMetadata;
 
@@ -45,7 +46,7 @@ public final class TableBuilder {
      * @param desired  the desired end result
      * @return a set of statements to modify an existing table
      */
-    public static List<AlterTable> alter(TableMetadata existing, CreateTable desired) {
+    public static List<AlterTable> alter(AbstractTableMetadata existing, CreateTable desired) {
         List<AlterTable> results = new ArrayList<>();
 
         for (BuiltTableStatement.Column column : desired.getColumns()) {
