@@ -5,6 +5,7 @@ import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.RegularStatement;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 /**
  * A built CQL3 keyspace statement
@@ -79,4 +80,21 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
     public String getKeyspace() {
         return keyspace;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, ByteBuffer> getNamedValues(ProtocolVersion protocolVersion, CodecRegistry codecRegistry) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean usesNamedValues() {
+        return false;
+    }
+
 }

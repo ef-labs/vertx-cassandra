@@ -13,6 +13,7 @@ import io.vertx.core.logging.LoggerFactory;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Default implementation of {@link CassandraSession}
@@ -263,6 +264,14 @@ public class DefaultCassandraSession implements CassandraSession {
      * {@inheritDoc}
      */
     @Override
+    public ResultSet execute(String query, Map<String, Object> values) {
+        return getSession().execute(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ResultSet execute(Statement statement) {
         return getSession().execute(statement);
     }
@@ -280,6 +289,14 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public ResultSetFuture executeAsync(String query, Object... values) {
+        return getSession().executeAsync(query, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResultSetFuture executeAsync(String query, Map<String, Object> values) {
         return getSession().executeAsync(query, values);
     }
 
