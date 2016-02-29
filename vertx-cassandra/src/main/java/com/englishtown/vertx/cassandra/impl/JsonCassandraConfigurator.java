@@ -22,6 +22,7 @@ import java.util.List;
 public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected List<String> seeds;
+    protected Integer port;
     protected LoadBalancingPolicy loadBalancingPolicy;
     protected ReconnectionPolicy reconnectionPolicy;
     protected PoolingOptions poolingOptions;
@@ -33,7 +34,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected final List<String> DEFAULT_SEEDS = ImmutableList.of("127.0.0.1");
 
     public static final String CONFIG_SEEDS = "seeds";
+    public static final String CONFIG_PORT = "port";
     public static final String CONFIG_POLICIES = "policies";
+    public static final String CONFIG_POLICIES_LOAD_BALANCING = "load_balancing";
+    public static final String CONFIG_POLICIES_RECONNECTION = "reconnection";
     public static final String CONFIG_POOLING = "pooling";
     public static final String CONFIG_SOCKET = "socket";
     public static final String CONFIG_METRICS = "metrics";
@@ -68,6 +72,16 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     @Override
     public List<String> getSeeds() {
         return seeds;
+    }
+
+    /**
+     * Optional port to use to connect to cassandra.
+     *
+     * @return
+     */
+    @Override
+    public Integer getPort() {
+        return port;
     }
 
     @Override
@@ -113,6 +127,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected void init(JsonObject config) {
 
         initSeeds(config.getJsonArray(CONFIG_SEEDS));
+        initPort(config);
         initPolicies(config.getJsonObject(CONFIG_POLICIES));
         initPoolingOptions(config.getJsonObject(CONFIG_POOLING));
         initSocketOptions(config.getJsonObject(CONFIG_SOCKET));
@@ -136,14 +151,24 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         }
     }
 
+    protected void initPort(JsonObject config) {
+        Integer i = config.getInteger(CONFIG_PORT);
+
+        if (i == null || i <= 0) {
+            return;
+        }
+
+        port = i;
+    }
+
     protected void initPolicies(JsonObject policyConfig) {
 
         if (policyConfig == null) {
             return;
         }
 
-        initLoadBalancingPolicy(policyConfig.getJsonObject("load_balancing"));
-        initReconnectionPolicy(policyConfig.getJsonObject("reconnection"));
+        initLoadBalancingPolicy(policyConfig.getJsonObject(CONFIG_POLICIES_LOAD_BALANCING));
+        initReconnectionPolicy(policyConfig.getJsonObject(CONFIG_POLICIES_RECONNECTION));
     }
 
     protected void initLoadBalancingPolicy(JsonObject loadBalancing) {
