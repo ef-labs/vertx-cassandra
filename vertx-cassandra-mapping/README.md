@@ -10,7 +10,7 @@ Add a dependency to
 <dependency>
     <groupId>com.englishtown.vertx</groupId>
     <artifactId>vertx-cassandra-mapping</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
