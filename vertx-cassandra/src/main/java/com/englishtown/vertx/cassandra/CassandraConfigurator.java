@@ -21,6 +21,13 @@ public interface CassandraConfigurator {
     List<String> getSeeds();
 
     /**
+     * Optional port to use to connect to cassandra.
+     *
+     * @return
+     */
+    Integer getPort();
+
+    /**
      * Optional load balancing policy
      *
      * @return

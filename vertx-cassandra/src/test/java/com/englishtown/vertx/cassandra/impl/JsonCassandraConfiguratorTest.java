@@ -89,10 +89,10 @@ public class JsonCassandraConfiguratorTest {
         assertFalse(configurator.getSeeds().isEmpty());
         assertEquals("127.0.0.1", configurator.getSeeds().get(0));
 
-        config.put("seeds", new JsonArray()
-                        .add("127.0.0.1")
-                        .add("127.0.0.2")
-                        .add("127.0.0.3")
+        config.put(JsonCassandraConfigurator.CONFIG_SEEDS, new JsonArray()
+                .add("127.0.0.1")
+                .add("127.0.0.2")
+                .add("127.0.0.3")
         );
 
         configurator = new JsonCassandraConfigurator(vertx);
@@ -102,27 +102,42 @@ public class JsonCassandraConfiguratorTest {
     }
 
     @Test
+    public void testGetPort_Null() throws Exception {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
+        assertNull(configurator.getPort());
+
+    }
+
+    @Test
+    public void testGetPort() throws Exception {
+
+        Integer port = 9043;
+        config.put(JsonCassandraConfigurator.CONFIG_PORT, port);
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
+        assertEquals(port, configurator.getPort());
+
+    }
+
+    @Test
     public void testInitPolicies_LoadBalancing_No_Policies() throws Exception {
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getLoadBalancingPolicy());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testInitPolicies_LoadBalancing_Missing_Name() throws Exception {
-        config.put("policies", new JsonObject().put("load_balancing", new JsonObject()));
-        try {
-            new JsonCassandraConfigurator(vertx);
-            fail();
-        } catch (IllegalArgumentException e) {
-            // Expected
-        }
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_LOAD_BALANCING, new JsonObject()));
+        new JsonCassandraConfigurator(vertx);
     }
 
     @Test
     public void testInitPolicies_LoadBalancing_DCAwareRoundRobinPolicy() throws Exception {
 
-        config.put("policies", new JsonObject()
-                .put("load_balancing", new JsonObject()
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_LOAD_BALANCING, new JsonObject()
                         .put("name", "DCAwareRoundRobinPolicy")
                         .put("local_dc", "US1")));
 
@@ -135,9 +150,9 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_LoadBalancing_Custom() throws Exception {
 
-        config.put("policies", new JsonObject()
-                .put("load_balancing", new JsonObject()
-                                .put("name", TestLoadBalancingPolicy.class.getName())
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_LOAD_BALANCING, new JsonObject()
+                        .put("name", TestLoadBalancingPolicy.class.getName())
                 ));
 
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
@@ -152,22 +167,18 @@ public class JsonCassandraConfiguratorTest {
         assertNull(configurator.getReconnectionPolicy());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testInitPolicies_Reconnection_Missing_Name() throws Exception {
-        config.put("policies", new JsonObject().put("reconnection", new JsonObject()));
-        try {
-            new JsonCassandraConfigurator(vertx);
-            fail();
-        } catch (IllegalArgumentException e) {
-            // Expected
-        }
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_RECONNECTION, new JsonObject()));
+        new JsonCassandraConfigurator(vertx);
     }
 
     @Test
     public void testInitPolicies_Reconnection_ConstantReconnectionPolicy() throws Exception {
 
-        config.put("policies", new JsonObject()
-                .put("reconnection", new JsonObject()
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_RECONNECTION, new JsonObject()
                         .put("name", "constant")
                         .put("delay", 1000)));
 
@@ -180,8 +191,8 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_Reconnection_ExponentialReconnectionPolicy() throws Exception {
 
-        config.put("policies", new JsonObject()
-                .put("reconnection", new JsonObject()
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_RECONNECTION, new JsonObject()
                         .put("name", "exponential")
                         .put("base_delay", 1000)
                         .put("max_delay", 5000)));
@@ -195,9 +206,9 @@ public class JsonCassandraConfiguratorTest {
     @Test
     public void testInitPolicies_Reconnection_Custom() throws Exception {
 
-        config.put("policies", new JsonObject()
-                .put("reconnection", new JsonObject()
-                                .put("name", TestReconnectionPolicy.class.getName())
+        config.put(JsonCassandraConfigurator.CONFIG_POLICIES, new JsonObject()
+                .put(JsonCassandraConfigurator.CONFIG_POLICIES_RECONNECTION, new JsonObject()
+                        .put("name", TestReconnectionPolicy.class.getName())
                 ));
 
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
@@ -212,13 +223,13 @@ public class JsonCassandraConfiguratorTest {
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getPoolingOptions());
 
-        config.put("pooling", new JsonObject()
-                        .put("core_connections_per_host_local", 1)
-                        .put("core_connections_per_host_remote", 2)
-                        .put("max_connections_per_host_local", 3)
-                        .put("max_connections_per_host_remote", 4)
-                        .put("max_simultaneous_requests_local", 5)
-                        .put("max_simultaneous_requests_remote", 6)
+        config.put(JsonCassandraConfigurator.CONFIG_POOLING, new JsonObject()
+                .put("core_connections_per_host_local", 1)
+                .put("core_connections_per_host_remote", 2)
+                .put("max_connections_per_host_local", 3)
+                .put("max_connections_per_host_remote", 4)
+                .put("max_simultaneous_requests_local", 5)
+                .put("max_simultaneous_requests_remote", 6)
         );
 
         configurator = new JsonCassandraConfigurator(vertx);
@@ -240,15 +251,15 @@ public class JsonCassandraConfiguratorTest {
         JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(vertx);
         assertNull(configurator.getSocketOptions());
 
-        config.put("socket", new JsonObject()
-                        .put("connect_timeout_millis", 32000)
-                        .put("read_timeout_millis", 33000)
-                        .put("keep_alive", true)
-                        .put("reuse_address", true)
-                        .put("receive_buffer_size", 1024)
-                        .put("send_buffer_size", 2048)
-                        .put("so_linger", 10)
-                        .put("tcp_no_delay", false)
+        config.put(JsonCassandraConfigurator.CONFIG_SOCKET, new JsonObject()
+                .put("connect_timeout_millis", 32000)
+                .put("read_timeout_millis", 33000)
+                .put("keep_alive", true)
+                .put("reuse_address", true)
+                .put("receive_buffer_size", 1024)
+                .put("send_buffer_size", 2048)
+                .put("so_linger", 10)
+                .put("tcp_no_delay", false)
         );
 
         configurator = new JsonCassandraConfigurator(vertx);
@@ -365,7 +376,7 @@ public class JsonCassandraConfiguratorTest {
 
         JsonObject metrics = new JsonObject();
 
-        config.put("metrics", metrics);
+        config.put(JsonCassandraConfigurator.CONFIG_METRICS, metrics);
         metrics.put("jmx_enabled", true);
         configurator = new JsonCassandraConfigurator(vertx);
         assertNotNull(configurator.getMetricsOptions());
@@ -408,7 +419,7 @@ public class JsonCassandraConfiguratorTest {
         String password = "test_password";
 
         JsonObject auth = new JsonObject();
-        config.put("auth", auth);
+        config.put(JsonCassandraConfigurator.CONFIG_AUTH, auth);
 
         try {
             new JsonCassandraConfigurator(config);

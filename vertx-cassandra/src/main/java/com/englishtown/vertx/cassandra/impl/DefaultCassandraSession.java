@@ -64,6 +64,10 @@ public class DefaultCassandraSession implements CassandraSession {
             clusterBuilder.addContactPoint(seed);
         }
 
+        if (configurator.getPort() != null) {
+            clusterBuilder.withPort(configurator.getPort());
+        }
+
         // Add policies to cluster builder
         if (configurator.getLoadBalancingPolicy() != null) {
             clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
