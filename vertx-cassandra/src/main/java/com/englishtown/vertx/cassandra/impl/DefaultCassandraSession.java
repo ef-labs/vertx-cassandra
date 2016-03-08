@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.vertx.core.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.FutureFactory;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -43,7 +44,11 @@ public class DefaultCassandraSession implements CassandraSession {
                 runOnReadyCallbacks(result);
                 return;
             }
-            init(configurator);
+            try {
+                init(configurator);
+            } catch (Throwable t) {
+                runOnReadyCallbacks(Future.failedFuture(t));
+            }
         });
     }
 

@@ -13,6 +13,7 @@ import com.google.common.io.Resources;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -41,7 +42,7 @@ public abstract class IntegrationTestBase extends VertxTestBase {
         super.setUp();
         locator = createLocator();
 
-        CountDownLatch latch = new CountDownLatch(1);
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
         vertx.runOnContext(aVoid -> {
 
@@ -58,9 +59,7 @@ public abstract class IntegrationTestBase extends VertxTestBase {
 
             session.onReady(result -> {
                 if (result.failed()) {
-                    result.cause().printStackTrace();
-                    fail();
-                    latch.countDown();
+                    future.completeExceptionally(result.cause());
                     return;
                 }
 
@@ -80,11 +79,11 @@ public abstract class IntegrationTestBase extends VertxTestBase {
                         .column("value", "text")
                         .primaryKey("id");
 
-                latch.countDown();
+                future.complete(null);
             });
         });
 
-        latch.await();
+        future.get();
     }
 
     protected <T> T getInstance(Class<T> clazz) {
