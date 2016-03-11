@@ -6,10 +6,12 @@ import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.FutureUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.FutureFactory;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -42,13 +44,15 @@ public class DefaultCassandraSession implements CassandraSession {
 
         configurator.onReady(result -> {
             if (result.failed()) {
-                runOnReadyCallbacks(result);
+                initResult = result;
+                runOnReadyCallbacks(initResult);
                 return;
             }
             try {
                 init(configurator);
             } catch (Throwable t) {
-                runOnReadyCallbacks(Future.failedFuture(t));
+                initResult = Future.failedFuture(t);
+                runOnReadyCallbacks(initResult);
             }
         });
     }
@@ -109,11 +113,8 @@ public class DefaultCassandraSession implements CassandraSession {
         // Build cluster and connect
         cluster = clusterBuilder.build();
         reconnectAsync(result -> {
-            if (result.succeeded()) {
-                runOnReadyCallbacks(Future.succeededFuture());
-            } else {
-                runOnReadyCallbacks(Future.failedFuture(result.cause()));
-            }
+            initResult = result;
+            runOnReadyCallbacks(initResult);
         });
 
     }

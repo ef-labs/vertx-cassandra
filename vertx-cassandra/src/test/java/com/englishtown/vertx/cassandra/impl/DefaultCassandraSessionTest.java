@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -71,6 +74,16 @@ public class DefaultCassandraSessionTest {
     ArgumentCaptor<Handler<AsyncResult<Void>>> onReadyCaptor;
     @Captor
     ArgumentCaptor<Executor> executorCaptor;
+
+    private BiConsumer<DefaultCassandraSession, CompletableFuture<Void>> onReadyFail = (cassandraSession, future) -> {
+        cassandraSession.onReady(result -> {
+            if (result.succeeded()) {
+                future.completeExceptionally(new RuntimeException("Should not succeed"));
+            } else {
+                future.complete(null);
+            }
+        });
+    };
 
     public static class TestLoadBalancingPolicy implements LoadBalancingPolicy {
         @Override
@@ -138,7 +151,7 @@ public class DefaultCassandraSessionTest {
         cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
 
         verify(configurator).onReady(onReadyCaptor.capture());
-        onReadyCaptor.getValue().handle(Future.succeededFuture(null));
+        onReadyCaptor.getValue().handle(Future.succeededFuture());
 
         sessionFuture.set(session);
 
@@ -189,6 +202,47 @@ public class DefaultCassandraSessionTest {
         } catch (Throwable t) {
             // Expected
         }
+
+    }
+
+    @Test
+    public void testCtorInitFail() throws Exception {
+
+        seeds.clear();
+        reset(configurator);
+
+        DefaultCassandraSession cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        onReadyFail.accept(cassandraSession, future);
+
+        verify(configurator).onReady(onReadyCaptor.capture());
+        onReadyCaptor.getValue().handle(Future.succeededFuture());
+        future.get();
+
+        future = new CompletableFuture<>();
+        onReadyFail.accept(cassandraSession, future);
+        future.get();
+
+    }
+
+    @Test
+    public void testCtorReadyFail() throws Exception {
+
+        reset(configurator);
+
+        DefaultCassandraSession cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        onReadyFail.accept(cassandraSession, future);
+
+        verify(configurator).onReady(onReadyCaptor.capture());
+        onReadyCaptor.getValue().handle(Future.failedFuture("Test fail"));
+        future.get();
+
+        future = new CompletableFuture<>();
+        onReadyFail.accept(cassandraSession, future);
+        future.get();
 
     }
 
