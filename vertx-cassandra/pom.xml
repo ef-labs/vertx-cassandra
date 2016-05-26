@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-zookeeper</artifactId>
+            <artifactId>vertx-curator</artifactId>
             <optional>true</optional>
         </dependency>
 

@@ -3,8 +3,8 @@ package com.englishtown.vertx.cassandra.zookeeper;
 import com.englishtown.promises.Promise;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
-import com.englishtown.vertx.zookeeper.ZooKeeperClient;
-import com.englishtown.vertx.zookeeper.promises.WhenConfiguratorHelper;
+import com.englishtown.vertx.curator.CuratorClient;
+import com.englishtown.vertx.curator.promises.WhenConfiguratorHelper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,7 +29,7 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
     protected String pathPrefix = "cassandra";
 
     @Inject
-    public ZooKeeperCassandraConfigurator(ZooKeeperClient client, WhenConfiguratorHelper helper, When when, Vertx vertx, EnvVarDelegate envVarDelegate) {
+    public ZooKeeperCassandraConfigurator(CuratorClient client, WhenConfiguratorHelper helper, When when, Vertx vertx, EnvVarDelegate envVarDelegate) {
         super(vertx, envVarDelegate);
         this.helper = helper;
         this.when = when;
