@@ -1,6 +1,8 @@
 # vertx-cassandra
 Talk to Cassandra asynchronously from vert.x and run your callbacks on the vert.x event loop.
 
+[![Build Status](https://travis-ci.org/ef-labs/vertx-cassandra.png)](https://travis-ci.org/ef-labs/vertx-cassandra)
+
 ## Getting Started
 
 Add a dependency to vertx-cassandra:
