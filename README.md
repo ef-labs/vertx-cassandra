@@ -1,7 +1,8 @@
 # vertx-cassandra
 Talk to Cassandra asynchronously from vert.x and run your callbacks on the vert.x event loop.
 
-[![Build Status](https://travis-ci.org/ef-labs/vertx-cassandra.png)](https://travis-ci.org/ef-labs/vertx-cassandra)
+[![Build Status](http://img.shields.io/travis/ef-labs/vertx-cassandra.svg?maxAge=2592000&style=flat-square)](https://travis-ci.org/ef-labs/vertx-cassandra)
+[![Maven Central](https://img.shields.io/maven-central/v/com.englishtown.vertx/vertx-cassandra.svg?maxAge=2592000&style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.englishtown.vertx/vertx-cassandra/)
 
 ## Getting Started
 
