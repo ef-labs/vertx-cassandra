@@ -12,9 +12,10 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
+import org.apache.cassandra.service.EmbeddedCassandraService;
+import org.junit.BeforeClass;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Cassandra base integration test class
@@ -31,8 +32,22 @@ public abstract class IntegrationTestBase extends VertxTestBase {
     public static final String TEST_CONFIG_FILE = "test_config.json";
     public static final String TEST_KEYSPACE = "test_vertx_mod_cass";
 
+    private static EmbeddedCassandraService cassandraService = null;
 
     protected abstract Locator createLocator();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        if (cassandraService == null) {
+            String embedded = System.getProperty("test.embedded", "");
+            if (!"true".equals(embedded)) {
+                return;
+            }
+            System.setProperty("cassandra.storagedir", "target/cassandra");
+            cassandraService = new EmbeddedCassandraService();
+            cassandraService.start();
+        }
+    }
 
     /**
      * Override to run additional initialization before your integration tests run

@@ -1,6 +1,7 @@
 {
     "cassandra": {
-        "seeds": [${cassandra.seeds}],
+        "seeds": [${test.cassandra.seeds}],
+        "port": ${test.cassandra.port},
         "auth": {
             "username": "cassandra",
             "password": "cassandra"
