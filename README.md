@@ -1,6 +1,9 @@
 # vertx-cassandra
 Talk to Cassandra asynchronously from vert.x and run your callbacks on the vert.x event loop.
 
+[![Build Status](http://img.shields.io/travis/ef-labs/vertx-cassandra.svg?maxAge=2592000&style=flat-square)](https://travis-ci.org/ef-labs/vertx-cassandra)
+[![Maven Central](https://img.shields.io/maven-central/v/com.englishtown.vertx/vertx-cassandra.svg?maxAge=2592000&style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.englishtown.vertx/vertx-cassandra/)
+
 ## Getting Started
 
 Add a dependency to vertx-cassandra:
@@ -9,13 +12,13 @@ Add a dependency to vertx-cassandra:
 <dependency>
     <groupId>com.englishtown.vertx</groupId>
     <artifactId>vertx-cassandra</artifactId>
-    <version>3.0.0</version>
+    <version>3.2.0</version>
 </dependency>
 ```
 
 vert.x    | cassandra | vertx-cassandra
 --------- | --------- | ---------------
-3.1.0     |   3.0     | 3.2.0-SNAPSHOT
+3.2.0     |   3.0     | 3.2.0
 3.1.0     |   2.1     | 3.1.0
 3.0.0     |   2.1     | 3.0.0
 2.x       |   2.1     | 2.1.0 (vertx-mod-cassandra)

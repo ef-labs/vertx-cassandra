@@ -128,6 +128,26 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     }
 
     /**
+     * Promise for when the session is ready
+     *
+     * @return
+     */
+    @Override
+    public Promise<Void> ready() {
+        Deferred<Void> d = when.defer();
+
+        session.onReady(result -> {
+            if (result.succeeded()) {
+                d.resolve((Void) null);
+            } else {
+                d.reject(result.cause());
+            }
+        });
+
+        return d.getPromise();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

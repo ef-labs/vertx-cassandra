@@ -79,4 +79,11 @@ public interface WhenCassandraSession extends AutoCloseable {
      */
     CassandraSession getSession();
 
+    /**
+     * Promise for when the session is ready
+     *
+     * @return
+     */
+    Promise<Void> ready();
+
 }

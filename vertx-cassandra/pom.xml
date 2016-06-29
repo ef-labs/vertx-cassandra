@@ -7,7 +7,7 @@
     <parent>
         <artifactId>vertx-cassandra-parent</artifactId>
         <groupId>com.englishtown.vertx</groupId>
-        <version>3.2.0</version>
+        <version>3.3.0</version>
     </parent>
 
     <dependencies>
@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>com.englishtown.vertx</groupId>
-            <artifactId>vertx-zookeeper</artifactId>
+            <artifactId>vertx-curator</artifactId>
             <optional>true</optional>
         </dependency>
 
