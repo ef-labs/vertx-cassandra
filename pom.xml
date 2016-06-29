@@ -26,7 +26,7 @@
         <vertx.hk2.version>2.3.0</vertx.hk2.version>
         <vertx.guice.version>2.2.0</vertx.guice.version>
         <vertx.when.version>4.1.1</vertx.when.version>
-        <vertx.curator.version>3.0.0-SNAPSHOT</vertx.curator.version>
+        <vertx.curator.version>3.0.0</vertx.curator.version>
         <netty.version>4.0.36.Final</netty.version>
         <guava.version>18.0</guava.version>
 
