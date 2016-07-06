@@ -14,24 +14,20 @@
     <parent>
         <groupId>com.englishtown.vertx</groupId>
         <artifactId>oss-parent-vertx</artifactId>
-        <version>2.1.0</version>
+        <version>2.2.0</version>
     </parent>
 
     <properties>
         <!--Dependency versions-->
         <cassandra.driver.version>3.0.2</cassandra.driver.version>
-        <cassandra.version>3.6</cassandra.version>
-        <vertx.version>3.2.1</vertx.version>
-        <vertx.hk2.version>2.3.0</vertx.hk2.version>
-        <vertx.guice.version>2.2.0</vertx.guice.version>
-        <vertx.when.version>4.1.1</vertx.when.version>
-        <vertx.curator.version>3.0.0</vertx.curator.version>
-        <netty.version>4.0.36.Final</netty.version>
+        <cassandra.version>3.7</cassandra.version>
+        <vertx.version>3.3.0</vertx.version>
+        <vertx.hk2.version>2.4.0</vertx.hk2.version>
+        <vertx.guice.version>2.3.0</vertx.guice.version>
+        <vertx.when.version>4.2.0</vertx.when.version>
+        <vertx.curator.version>3.1.0</vertx.curator.version>
+        <netty.version>4.1.1.Final</netty.version>
         <guava.version>18.0</guava.version>
-
-        <!--Plugin versions-->
-        <maven.jgitflow.plugin.version>1.0-m5.1</maven.jgitflow.plugin.version>
-        <maven.jar.plugin.version>2.6</maven.jar.plugin.version>
 
         <!--Test properties-->
         <test.cassandra.seeds>"localhost"</test.cassandra.seeds>
@@ -54,6 +50,11 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
