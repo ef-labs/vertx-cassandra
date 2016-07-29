@@ -42,7 +42,7 @@ The main configuration is via the normal config.json file for a Vert.x module.
             "load_balancing": {
                 "name": "<lb_policy_name>",
             },
-            "reconnect_policy": {
+            "reconnection": {
                 "name": "<reconnect_policy_name>"
             }
         },
@@ -94,7 +94,7 @@ A sample config looks like:
                 "local_dc": "LOCAL1",
                 "used_hosts_per_remote_dc": 1
             },
-            "reconnect": {
+            "reconnection": {
                 "name": "exponential",
                 "base_delay": 1000,
                 "max_delay": 10000
