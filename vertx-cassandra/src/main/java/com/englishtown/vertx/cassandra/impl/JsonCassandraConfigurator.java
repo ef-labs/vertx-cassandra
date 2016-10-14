@@ -280,8 +280,13 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         Integer core_connections_per_host_local = poolingConfig.getInteger("core_connections_per_host_local");
         Integer core_connections_per_host_remote = poolingConfig.getInteger("core_connections_per_host_remote");
+        Integer heartbeat_interval_seconds = poolingConfig.getInteger("heartbeat_interval_seconds");
+        Integer idle_timeout_seconds = poolingConfig.getInteger("idle_timeout_seconds");
         Integer max_connections_per_host_local = poolingConfig.getInteger("max_connections_per_host_local");
         Integer max_connections_per_host_remote = poolingConfig.getInteger("max_connections_per_host_remote");
+        Integer max_queue_size = poolingConfig.getInteger("max_queue_size");
+        Integer max_requests_per_connection_local = poolingConfig.getInteger("max_requests_per_connection_local");
+        Integer max_requests_per_connection_remote = poolingConfig.getInteger("max_requests_per_connection_remote");
         Integer new_connection_threshold_local = poolingConfig.getInteger("new_connection_threshold_local");
         Integer new_connection_threshold_remote = poolingConfig.getInteger("new_connection_threshold_remote");
 
@@ -291,27 +296,32 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         if (core_connections_per_host_remote != null) {
             poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, core_connections_per_host_remote);
         }
+        if (heartbeat_interval_seconds != null) {
+            poolingOptions.setHeartbeatIntervalSeconds(heartbeat_interval_seconds);
+        }
+        if (idle_timeout_seconds != null) {
+            poolingOptions.setIdleTimeoutSeconds(idle_timeout_seconds);
+        }
         if (max_connections_per_host_local != null) {
             poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, max_connections_per_host_local);
         }
         if (max_connections_per_host_remote != null) {
             poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, max_connections_per_host_remote);
         }
+        if (max_queue_size != null) {
+            poolingOptions.setMaxQueueSize(max_queue_size);
+        }
+        if (max_requests_per_connection_local != null) {
+            poolingOptions.setMaxRequestsPerConnection(HostDistance.LOCAL, max_requests_per_connection_local);
+        }
+        if (max_requests_per_connection_remote != null) {
+            poolingOptions.setMaxRequestsPerConnection(HostDistance.REMOTE, max_requests_per_connection_remote);
+        }
         if (new_connection_threshold_local != null) {
             poolingOptions.setNewConnectionThreshold(HostDistance.LOCAL, new_connection_threshold_local);
-        } else {
-            Integer max_simultaneous_requests_local = poolingConfig.getInteger("max_simultaneous_requests_local");
-            if (max_simultaneous_requests_local != null) {
-                poolingOptions.setNewConnectionThreshold(HostDistance.LOCAL, max_simultaneous_requests_local);
-            }
         }
         if (new_connection_threshold_remote != null) {
             poolingOptions.setNewConnectionThreshold(HostDistance.REMOTE, new_connection_threshold_remote);
-        } else {
-            Integer max_simultaneous_requests_remote = poolingConfig.getInteger("max_simultaneous_requests_remote");
-            if (max_simultaneous_requests_remote != null) {
-                poolingOptions.setNewConnectionThreshold(HostDistance.REMOTE, max_simultaneous_requests_remote);
-            }
         }
 
     }

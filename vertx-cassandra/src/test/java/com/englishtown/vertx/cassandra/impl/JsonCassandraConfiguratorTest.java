@@ -237,10 +237,16 @@ public class JsonCassandraConfiguratorTest {
         config.put(JsonCassandraConfigurator.CONFIG_POOLING, new JsonObject()
                 .put("core_connections_per_host_local", 1)
                 .put("core_connections_per_host_remote", 2)
-                .put("max_connections_per_host_local", 3)
-                .put("max_connections_per_host_remote", 4)
-                .put("max_simultaneous_requests_local", 5)
-                .put("max_simultaneous_requests_remote", 6)
+                .put("heartbeat_interval_seconds", 3)
+                .put("idle_timeout_seconds", 4)
+                .put("max_queue_size", 5)
+                .put("max_connections_per_host_local", 6)
+                .put("max_connections_per_host_remote", 7)
+                .put("max_requests_per_connection_local", 8)
+                .put("max_requests_per_connection_remote", 9)
+                .put("new_connection_threshold_local", 10)
+                .put("new_connection_threshold_remote", 11)
+
         );
 
         configurator = new JsonCassandraConfigurator(vertx);
@@ -249,10 +255,15 @@ public class JsonCassandraConfiguratorTest {
         PoolingOptions options = configurator.getPoolingOptions();
         assertEquals(1, options.getCoreConnectionsPerHost(HostDistance.LOCAL));
         assertEquals(2, options.getCoreConnectionsPerHost(HostDistance.REMOTE));
-        assertEquals(3, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
-        assertEquals(4, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
-        assertEquals(5, options.getNewConnectionThreshold(HostDistance.LOCAL));
-        assertEquals(6, options.getNewConnectionThreshold(HostDistance.REMOTE));
+        assertEquals(3, options.getHeartbeatIntervalSeconds());
+        assertEquals(4, options.getIdleTimeoutSeconds());
+        assertEquals(5, options.getMaxQueueSize());
+        assertEquals(6, options.getMaxConnectionsPerHost(HostDistance.LOCAL));
+        assertEquals(7, options.getMaxConnectionsPerHost(HostDistance.REMOTE));
+        assertEquals(8, options.getMaxRequestsPerConnection(HostDistance.LOCAL));
+        assertEquals(9, options.getMaxRequestsPerConnection(HostDistance.REMOTE));
+        assertEquals(10, options.getNewConnectionThreshold(HostDistance.LOCAL));
+        assertEquals(11, options.getNewConnectionThreshold(HostDistance.REMOTE));
 
     }
 

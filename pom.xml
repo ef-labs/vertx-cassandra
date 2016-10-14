@@ -19,7 +19,7 @@
 
     <properties>
         <!--Dependency versions-->
-        <cassandra.driver.version>3.0.4</cassandra.driver.version>
+        <cassandra.driver.version>3.1.1</cassandra.driver.version>
         <cassandra.version>3.7</cassandra.version>
         <vertx.version>3.3.0</vertx.version>
         <vertx.hk2.version>2.4.0</vertx.hk2.version>
