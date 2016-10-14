@@ -50,10 +50,15 @@ The main configuration is via the normal config.json file for a Vert.x module.
         "pooling": {
             "core_connections_per_host_local": <int>,
             "core_connections_per_host_remote": <int>,
+            "heartbeat_interval_seconds": <int>,
+            "idle_timeout_seconds": <int>,
+            "max_queue_size": <int>,
+            "max_requests_per_connection_local": <int>,
+            "max_requests_per_connection_remote": <int>,
             "max_connections_per_host_local": <int>,
             "max_connections_per_host_remote": <int>,
-            "max_simultaneous_requests_local": <int>,
-            "max_simultaneous_requests_remote": <int>
+            "new_connection_threshold_local": <int>,
+            "new_connection_threshold_remote": <int>
         },
         
         "socket": {
