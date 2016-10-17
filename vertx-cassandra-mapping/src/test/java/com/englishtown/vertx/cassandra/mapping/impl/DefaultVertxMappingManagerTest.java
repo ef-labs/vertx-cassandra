@@ -33,6 +33,10 @@ public class DefaultVertxMappingManagerTest {
     @Mock
     private KeyspaceMetadata keyspaceMetadata;
     @Mock
+    private TableMetadata tableMetadata;
+    @Mock
+    private ColumnMetadata columnMetadata;
+    @Mock
     private Configuration configuration;
     @Mock
     private ProtocolOptions protocolOptions;
@@ -43,6 +47,8 @@ public class DefaultVertxMappingManagerTest {
         when(session.getCluster()).thenReturn(cluster);
         when(cluster.getMetadata()).thenReturn(metadata);
         when(metadata.getKeyspace(anyString())).thenReturn(keyspaceMetadata);
+        when(keyspaceMetadata.getTable(anyString())).thenReturn(tableMetadata);
+        when(tableMetadata.getColumn(anyString())).thenReturn(columnMetadata);
         when(cluster.getConfiguration()).thenReturn(configuration);
         when(configuration.getProtocolOptions()).thenReturn(protocolOptions);
         when(protocolOptions.getProtocolVersion()).thenReturn(ProtocolVersion.NEWEST_SUPPORTED);
