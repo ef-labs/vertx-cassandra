@@ -37,7 +37,7 @@ public abstract class BuiltTableStatement extends RegularStatement {
 
     @Override
     public String getQueryString(CodecRegistry codecRegistry) {
-        return null;
+        return getQueryString();
     }
 
     /**

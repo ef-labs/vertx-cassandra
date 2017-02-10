@@ -38,7 +38,7 @@ public abstract class BuiltKeyspaceStatement extends RegularStatement {
      */
     @Override
     public String getQueryString(CodecRegistry codecRegistry) {
-        return null;
+        return getQueryString();
     }
 
     /**
