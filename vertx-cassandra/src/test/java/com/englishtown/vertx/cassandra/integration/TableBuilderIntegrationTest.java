@@ -46,14 +46,14 @@ public abstract class TableBuilderIntegrationTest extends IntegrationTestBase {
         statement = TableBuilder.create(keyspace, table)
                 .ifNotExists()
                 .column("col1", "text")
-                .column("col2", "varchar")
+                .column("col2", "text")
                 .primaryKey("col1");
 
         session.execute(statement);
 
         CreateTable createTable = TableBuilder.create(keyspace, table)
                 .column("col1", "text")
-                .column("col2", "varchar")
+                .column("col2", "text")
                 .column("col3", "int")
                 .column("col4", "boolean")
                 .column("col5", "uuid")
