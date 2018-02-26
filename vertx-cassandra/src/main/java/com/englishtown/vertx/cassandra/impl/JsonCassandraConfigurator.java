@@ -33,6 +33,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     protected final List<String> DEFAULT_SEEDS = ImmutableList.of("127.0.0.1");
 
+    public static final String CONFIG_CASSANDRA = "cassandra";
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_PORT = "port";
     public static final String CONFIG_POLICIES = "policies";
@@ -62,7 +63,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     @Inject
     public JsonCassandraConfigurator(Vertx vertx) {
-        this(vertx.getOrCreateContext().config().getJsonObject("cassandra", new JsonObject()));
+        this(vertx.getOrCreateContext().config().getJsonObject(CONFIG_CASSANDRA, new JsonObject()));
     }
 
     public JsonCassandraConfigurator(JsonObject config) {
