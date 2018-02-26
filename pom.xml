@@ -169,10 +169,10 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/englishtown/${project.artifactId}.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/englishtown/${project.artifactId}.git</developerConnection>
+        <connection>scm:git:ssh://git@github.com/ef-labs/${project.artifactId}.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/ef-labs/${project.artifactId}.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/englishtown/${project.artifactId}</url>
+        <url>https://github.com/ef-labs/${project.artifactId}</url>
     </scm>
 
 </project>
