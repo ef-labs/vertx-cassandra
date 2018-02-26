@@ -45,48 +45,35 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     }
 
     private void initSeeds() {
+        String envVarSeeds = envVarDelegate.get(ENV_VAR_SEEDS);
 
-        // If default, try env vars
-        if (DEFAULT_SEEDS.equals(this.seeds)) {
-            String envVarSeeds = envVarDelegate.get(ENV_VAR_SEEDS);
-
-            if (!Strings.isNullOrEmpty(envVarSeeds)) {
-                logger.debug("Using environment configuration of " + envVarSeeds);
-                String[] seedsArray = envVarSeeds.split("\\|");
-                this.seeds = ImmutableList.copyOf(seedsArray);
-            }
+        if (!Strings.isNullOrEmpty(envVarSeeds)) {
+            logger.debug("Using environment configuration of " + envVarSeeds);
+            String[] seedsArray = envVarSeeds.split("\\|");
+            this.seeds = ImmutableList.copyOf(seedsArray);
         }
     }
 
     private void initLoadBalancingPolicy() {
+        String localDC = envVarDelegate.get(ENV_VAR_LOCAL_DC);
 
-        // If LB policy not set, try env vars
-        if (loadBalancingPolicy == null) {
-            String localDC = envVarDelegate.get(ENV_VAR_LOCAL_DC);
-
-            if (!Strings.isNullOrEmpty(localDC)) {
-                logger.debug("Using environment config for Local DC of " + localDC);
-                loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
-                        .withLocalDc(localDC)
-                        .build();
-            } else {
-                logger.debug("No environment configuration found for local DC");
-            }
+        if (!Strings.isNullOrEmpty(localDC)) {
+            logger.debug("Using environment config for Local DC of " + localDC);
+            loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
+                    .withLocalDc(localDC)
+                    .build();
+        } else {
+            logger.debug("No environment configuration found for local DC");
         }
     }
 
     private void initAuthProvider() {
+        String username = envVarDelegate.get(ENV_VAR_USERNAME);
+        String password = envVarDelegate.get(ENV_VAR_PASSWORD);
 
-        // If auth provider not set, try env vars
-        if (authProvider == null) {
-            String username = envVarDelegate.get(ENV_VAR_USERNAME);
-            String password = envVarDelegate.get(ENV_VAR_PASSWORD);
-
-            if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
-                authProvider = new PlainTextAuthProvider(username, password);
-            }
+        if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
+            authProvider = new PlainTextAuthProvider(username, password);
         }
-
     }
 
     public interface EnvVarDelegate {

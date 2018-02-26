@@ -6,6 +6,7 @@ import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,6 +16,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.List;
 
+import static com.englishtown.vertx.cassandra.impl.JsonCassandraConfigurator.CONFIG_CASSANDRA;
+import static com.englishtown.vertx.cassandra.impl.JsonCassandraConfigurator.CONFIG_SEEDS;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
@@ -27,6 +30,7 @@ import static org.mockito.Mockito.when;
 public class EnvironmentCassandraConfiguratorTest {
 
     JsonObject config = new JsonObject();
+    JsonObject cassConfig;
 
     @Mock
     Vertx vertx;
@@ -39,6 +43,8 @@ public class EnvironmentCassandraConfiguratorTest {
     public void setUp() {
         when(context.config()).thenReturn(config);
         when(vertx.getOrCreateContext()).thenReturn(context);
+
+        config.put(CONFIG_CASSANDRA, cassConfig = new JsonObject());
     }
 
 
@@ -56,9 +62,10 @@ public class EnvironmentCassandraConfiguratorTest {
     @Test
     public void testInitSeeds() throws Exception {
 
+        cassConfig.put(CONFIG_SEEDS, new JsonArray().add("127.0.0.5"));
         when(envVarDelegate.get(eq(EnvironmentCassandraConfigurator.ENV_VAR_SEEDS))).thenReturn("127.0.0.2|127.0.0.3|127.0.0.4");
 
-        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config, envVarDelegate);
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(vertx, envVarDelegate);
         List<String> seeds = configurator.getSeeds();
 
         assertNotNull(seeds);

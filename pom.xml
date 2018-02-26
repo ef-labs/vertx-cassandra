@@ -4,7 +4,7 @@
 
     <artifactId>vertx-cassandra-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.6.0</version>
+    <version>3.6.1</version>
 
     <modules>
         <module>vertx-cassandra</module>
@@ -14,7 +14,7 @@
     <parent>
         <groupId>com.englishtown.vertx</groupId>
         <artifactId>oss-parent-vertx</artifactId>
-        <version>2.2.0</version>
+        <version>2.2.1</version>
     </parent>
 
     <properties>
@@ -169,10 +169,10 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/englishtown/${project.artifactId}.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/englishtown/${project.artifactId}.git</developerConnection>
+        <connection>scm:git:ssh://git@github.com/ef-labs/${project.artifactId}.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/ef-labs/${project.artifactId}.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/englishtown/${project.artifactId}</url>
+        <url>https://github.com/ef-labs/${project.artifactId}</url>
     </scm>
 
 </project>
