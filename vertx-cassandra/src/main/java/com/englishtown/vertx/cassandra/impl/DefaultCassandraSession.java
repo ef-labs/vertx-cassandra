@@ -4,6 +4,7 @@ import com.datastax.driver.core.*;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.FutureUtils;
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.vertx.core.AsyncResult;
@@ -179,7 +180,8 @@ public class DefaultCassandraSession implements CassandraSession {
     public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
         logger.debug("Call to reconnect the session has been made");
         Session oldSession = session;
-        FutureUtils.addCallback(cluster.connectAsync(this.getConfigurator().getKeyspace()), new FutureCallback<Session>() {
+        FutureUtils.addCallback(Strings.isNullOrEmpty(this.getConfigurator().getKeyspace()) ? cluster.connectAsync()
+                : cluster.connectAsync(this.getConfigurator().getKeyspace()), new FutureCallback<Session>() {
             @Override
             public void onSuccess(Session session) {
                 DefaultCassandraSession.this.session = session;
