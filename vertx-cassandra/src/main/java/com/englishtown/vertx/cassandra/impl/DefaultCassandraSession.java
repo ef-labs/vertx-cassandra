@@ -104,6 +104,9 @@ public class DefaultCassandraSession implements CassandraSession {
             if (!configurator.getMetricsOptions().isJMXReportingEnabled()) {
                 clusterBuilder.withoutJMXReporting();
             }
+            if (!configurator.getMetricsOptions().isEnabled()){
+                clusterBuilder.withoutMetrics();
+            }
         }
 
         if (configurator.getAuthProvider() != null) {
