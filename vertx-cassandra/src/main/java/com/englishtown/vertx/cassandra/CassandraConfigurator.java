@@ -82,4 +82,6 @@ public interface CassandraConfigurator {
      * @param callback
      */
     void onReady(Handler<AsyncResult<Void>> callback);
+
+    String getKeyspace();
 }

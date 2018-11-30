@@ -5,6 +5,7 @@ import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.impl.EnvironmentCassandraConfigurator;
 import com.englishtown.vertx.curator.CuratorClient;
 import com.englishtown.vertx.curator.promises.WhenConfiguratorHelper;
+import com.google.common.base.Strings;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -135,6 +136,18 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
                     }));
         }
 
+        if (Strings.isNullOrEmpty(keyspace)){
+            promises.add(helper.getConfigElement(ZKPaths.makePath(getPathPrefix(), "KEYSPACE")).then(
+                    value -> {
+                        String keyspace = value.asString();
+                        if (!Strings.isNullOrEmpty(keyspace)){
+                            initKeyspace(keyspace);
+                        }
+                        return null;
+                    }
+            ));
+        }
+
         when.all(promises)
                 .then(aVoid -> {
                     runOnReadyCallbacks(Future.succeededFuture(null));
@@ -164,5 +177,4 @@ public class ZooKeeperCassandraConfigurator extends EnvironmentCassandraConfigur
     protected String getPathPrefix() {
         return pathPrefix;
     }
-
 }

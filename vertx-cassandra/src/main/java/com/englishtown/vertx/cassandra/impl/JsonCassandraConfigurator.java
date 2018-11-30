@@ -11,6 +11,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import javafx.util.Builder;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -30,6 +31,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     protected QueryOptions queryOptions;
     protected MetricsOptions metricsOptions;
     protected AuthProvider authProvider;
+
+    protected String keyspace;
 
     protected final List<String> DEFAULT_SEEDS = ImmutableList.of("127.0.0.1");
 
@@ -60,6 +63,8 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     public static final String CONSISTENCY_SERIAL = "SERIAL";
     public static final String CONSISTENCY_LOCAL_SERIAL = "LOCAL_SERIAL";
+
+    public static final String KEYSPACE = "KEYSPACE";
 
     @Inject
     public JsonCassandraConfigurator(Vertx vertx) {
@@ -135,6 +140,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         initQueryOptions(config.getJsonObject(CONFIG_QUERY, config));
         initMetricsOptions(config.getJsonObject(CONFIG_METRICS));
         initAuthProvider(config.getJsonObject(CONFIG_AUTH));
+        initKeyspace(config.getString(KEYSPACE));
 
     }
 
@@ -149,6 +155,12 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
         this.seeds = new ArrayList<>();
         for (int i = 0; i < seeds.size(); i++) {
             this.seeds.add(seeds.getString(i));
+        }
+    }
+
+    protected void initKeyspace(String keyspace){
+        if (!Strings.isNullOrEmpty(keyspace)){
+            this.keyspace = keyspace;
         }
     }
 
@@ -189,14 +201,16 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
             String localDc = loadBalancing.getString("local_dc");
             int usedHostsPerRemoteDc = loadBalancing.getInteger("used_hosts_per_remote_dc", 0);
 
-            if (localDc == null || localDc.isEmpty()) {
-                throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
-            }
+//            if (localDc == null || localDc.isEmpty()) {
+//                throw new IllegalArgumentException("A DCAwareRoundRobinPolicy requires a local_dc in configuration.");
+//            }
 
-            loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
-                    .withLocalDc(localDc)
-                    .withUsedHostsPerRemoteDc(usedHostsPerRemoteDc)
-                    .build();
+            DCAwareRoundRobinPolicy.Builder builder= DCAwareRoundRobinPolicy.builder()
+                    .withUsedHostsPerRemoteDc(usedHostsPerRemoteDc);
+            if (!Strings.isNullOrEmpty(localDc)){
+                builder.withLocalDc(localDc);
+            }
+            loadBalancingPolicy = builder.build();
 
         } else {
 
@@ -238,7 +252,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
                 throw new IllegalArgumentException("ConstantReconnectionPolicy requires a delay in configuration");
             }
 
-            reconnectionPolicy = new ConstantReconnectionPolicy(delay.intValue());
+            reconnectionPolicy = new ConstantReconnectionPolicy(delay);
 
         } else if ("ExponentialReconnectionPolicy".equalsIgnoreCase(name) || "exponential".equalsIgnoreCase(name)) {
             Long baseDelay = reconnection.getLong("base_delay");
@@ -248,7 +262,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
                 throw new IllegalArgumentException("ExponentialReconnectionPolicy requires base_delay and max_delay in configuration");
             }
 
-            reconnectionPolicy = new ExponentialReconnectionPolicy(baseDelay.longValue(), maxDelay.longValue());
+            reconnectionPolicy = new ExponentialReconnectionPolicy(baseDelay, maxDelay);
 
         } else {
             Class<?> clazz;
@@ -471,4 +485,7 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
     }
 
+    public String getKeyspace() {
+        return keyspace;
+    }
 }

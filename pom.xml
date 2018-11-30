@@ -4,7 +4,7 @@
 
     <artifactId>vertx-cassandra-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.7.0-SNAPSHOT</version>
+    <version>3.8.0-SNAPSHOT</version>
 
     <modules>
         <module>vertx-cassandra</module>
@@ -21,12 +21,12 @@
         <!--Dependency versions-->
         <cassandra.driver.version>3.3.2</cassandra.driver.version>
         <cassandra.version>3.11.1</cassandra.version>
-        <vertx.version>3.5.0</vertx.version>
+        <vertx.version>3.6.0.CR2</vertx.version>
         <vertx.hk2.version>2.4.0</vertx.hk2.version>
-        <vertx.guice.version>2.3.0</vertx.guice.version>
+        <vertx.guice.version>2.3.1</vertx.guice.version>
         <vertx.when.version>4.2.0</vertx.when.version>
         <vertx.curator.version>3.1.0</vertx.curator.version>
-        <netty.version>4.1.15.Final</netty.version>
+        <netty.version>4.1.19.Final</netty.version>
 
         <!--Test properties-->
         <test.cassandra.seeds>"localhost"</test.cassandra.seeds>
@@ -144,6 +144,18 @@
                                 <test.embedded>true</test.embedded>
                             </systemPropertyVariables>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

@@ -176,7 +176,7 @@ public class DefaultCassandraSession implements CassandraSession {
     public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
         logger.debug("Call to reconnect the session has been made");
         Session oldSession = session;
-        FutureUtils.addCallback(cluster.connectAsync(), new FutureCallback<Session>() {
+        FutureUtils.addCallback(cluster.connectAsync(this.getConfigurator().getKeyspace()), new FutureCallback<Session>() {
             @Override
             public void onSuccess(Session session) {
                 DefaultCassandraSession.this.session = session;
