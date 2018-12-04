@@ -21,7 +21,7 @@
         <!--Dependency versions-->
         <cassandra.driver.version>3.3.2</cassandra.driver.version>
         <cassandra.version>3.11.1</cassandra.version>
-        <vertx.version>3.6.0.CR2</vertx.version>
+        <vertx.version>3.6.0</vertx.version>
         <vertx.hk2.version>2.4.0</vertx.hk2.version>
         <vertx.guice.version>2.3.1</vertx.guice.version>
         <vertx.when.version>4.2.0</vertx.when.version>
@@ -186,5 +186,5 @@
         <tag>HEAD</tag>
         <url>https://github.com/ef-labs/${project.artifactId}</url>
     </scm>
-
+    
 </project>
