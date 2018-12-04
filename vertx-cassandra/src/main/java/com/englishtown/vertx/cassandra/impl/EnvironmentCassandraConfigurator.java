@@ -21,6 +21,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     public static final String ENV_VAR_LOCAL_DC = "CASSANDRA_LOCAL_DC";
     public static final String ENV_VAR_USERNAME = "CASSANDRA_USERNAME";
     public static final String ENV_VAR_PASSWORD = "CASSANDRA_PASSWORD";
+    public static final String ENV_KEYSPACE = "KEYSPACE";
 
     public static final Logger logger = LoggerFactory.getLogger(EnvironmentCassandraConfigurator.class);
     private final EnvVarDelegate envVarDelegate;
@@ -42,6 +43,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         initSeeds();
         initLoadBalancingPolicy();
         initAuthProvider();
+        initKeyspace();
     }
 
     private void initSeeds() {
@@ -88,4 +90,11 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         }
     }
 
+    private void initKeyspace(){
+        String keyspace = envVarDelegate.get(ENV_KEYSPACE);
+        if (!Strings.isNullOrEmpty(keyspace)){
+            this.keyspace = keyspace;
+        }
+
+    }
 }

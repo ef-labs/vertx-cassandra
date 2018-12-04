@@ -31,7 +31,7 @@ The main configuration is via the normal config.json file for a Vert.x module.
 {
     "cassandra": {
         "seeds": [<seeds>],
-        
+        "KEYSPACE": <string>,
         "query": {
             "consistency_level": <string>,
             "serial_consistency_level": <string>,
@@ -77,11 +77,12 @@ The main configuration is via the normal config.json file for a Vert.x module.
 
 * `seeds` - an array of string seed IP or host names.  At least one seed must be provided.
 * `lb_policy_name` - (optional) the load balancing policy name.  The following values are accepted:
-    * "DCAwareRoundRobinPolicy" - requires string field `local_dc` and optional numeric field `used_hosts_per_remote_dc`
+    * "DCAwareRoundRobinPolicy" - optional string field `local_dc` and optional numeric field `used_hosts_per_remote_dc`
     * Any FQCN such of a class that implements `LoadBalancingPolicy`
 * `reconnect_policy_name` - (optional) the reconnect policy name.  The following values are accepted:
     * "constant"|"ConstantReconnectionPolicy" - creates a `ConstantReconnectionPolicy` policy.  Expects additional numeric       field `delay` in ms.
     * "exponential"|"ExponentialReconnectionPolicy" - creates an `ExponentialReconnectionPolicy` policy.  Expects               additional numeric fields `base_delay` and `max_delay` in ms.
+* 'KEYSPACE' - the default keyspace name, optional.
 
 Refer to the [Cassandra Java driver documentation](http://www.datastax.com/documentation/developer/java-driver/2.0/index.html) for a description of the remaining configuration options.
 
