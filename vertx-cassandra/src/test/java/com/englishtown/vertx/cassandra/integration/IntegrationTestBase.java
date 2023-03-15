@@ -1,13 +1,15 @@
 package com.englishtown.vertx.cassandra.integration;
 
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.englishtown.promises.When;
 import com.englishtown.vertx.cassandra.CassandraSession;
-import com.englishtown.vertx.cassandra.keyspacebuilder.KeyspaceBuilder;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
-import com.englishtown.vertx.cassandra.tablebuilder.CreateTable;
-import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import io.vertx.core.json.JsonObject;
@@ -15,6 +17,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.junit.BeforeClass;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,8 +29,8 @@ public abstract class IntegrationTestBase extends VertxTestBase {
     protected CassandraSession session;
     protected WhenCassandraSession whenSession;
     protected String keyspace;
-    protected CreateTable createTestTableStatement;
     protected When when;
+    protected SimpleStatement createTestTableStatement;
 
     public static final String TEST_CONFIG_FILE = "test_config.json";
     public static final String TEST_KEYSPACE = "test_vertx_mod_cass";
@@ -79,20 +82,21 @@ public abstract class IntegrationTestBase extends VertxTestBase {
                 }
 
                 Metadata metadata = session.getMetadata();
-                KeyspaceMetadata keyspaceMetadata = metadata.getKeyspace(keyspace);
-                if (keyspaceMetadata != null) {
-                    for (TableMetadata tableMetadata : keyspaceMetadata.getTables()) {
-                        session.execute(TableBuilder.drop(keyspace, tableMetadata.getName()).ifExists());
+                Optional<KeyspaceMetadata> keyspaceMetadata = metadata.getKeyspace(keyspace);
+                if (keyspaceMetadata.isPresent()) {
+                    for (CqlIdentifier tableName : keyspaceMetadata.get().getTables().keySet()) {
+                        SimpleStatement dropTable = SchemaBuilder.dropTable(keyspace, tableName.toString()).build();
+                        session.getSession().execute(dropTable);
                     }
                 } else {
                     createKeyspace(metadata);
                 }
 
-                createTestTableStatement = TableBuilder.create(keyspace, "test")
+                createTestTableStatement = SchemaBuilder.createTable(keyspace, "test")
                         .ifNotExists()
-                        .column("id", "text")
-                        .column("value", "text")
-                        .primaryKey("id");
+                        .withPartitionKey("id", DataTypes.TEXT)
+                        .withColumn("value", DataTypes.TEXT)
+                        .build();
 
                 future.complete(null);
             });
@@ -107,26 +111,17 @@ public abstract class IntegrationTestBase extends VertxTestBase {
 
     private void createKeyspace(Metadata metadata) {
 
-        Statement createKeyspaceStatement = null;
+        SimpleStatement createKeyspace = SchemaBuilder
+                .createKeyspace(keyspace)
+                .ifNotExists()
+                .withSimpleStrategy(1)
+                .build();
 
-        // Find out which node is closest and use that for the networktopologystrategy
-        LoadBalancingPolicy lbPolicy = session.getCluster().getConfiguration().getPolicies().getLoadBalancingPolicy();
-        for (Host host : metadata.getAllHosts()) {
-            if (lbPolicy.distance(host) == HostDistance.LOCAL) {
-                createKeyspaceStatement = KeyspaceBuilder.create(keyspace)
-                        .ifNotExists()
-                        .networkTopologyStrategy()
-                        .dc(host.getDatacenter(), 1);
-                break;
-            }
+        ResultSet rs = session.getSession().execute(createKeyspace);
+
+        if (!rs.wasApplied()) {
+            throw new RuntimeException("Keyspace was not created");
         }
-
-        if (createKeyspaceStatement == null) {
-            fail("Could not find a local host for the test");
-            return;
-        }
-
-        session.execute(createKeyspaceStatement);
 
     }
 

@@ -1,7 +1,7 @@
 {
     "cassandra": {
         "seeds": [${test.cassandra.seeds}],
-        "port": ${test.cassandra.port},
+        "local_dc": "datacenter1",
         "auth": {
             "username": "cassandra",
             "password": "cassandra"

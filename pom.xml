@@ -4,11 +4,10 @@
 
     <artifactId>vertx-cassandra-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.7.0-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
 
     <modules>
         <module>vertx-cassandra</module>
-        <module>vertx-cassandra-mapping</module>
     </modules>
 
     <parent>
@@ -19,30 +18,32 @@
 
     <properties>
         <!--Dependency versions-->
-        <cassandra.driver.version>3.3.2</cassandra.driver.version>
-        <cassandra.version>3.11.1</cassandra.version>
+        <cassandra.driver.version>4.15.0</cassandra.driver.version>
+        <cassandra.version>3.11.14</cassandra.version>
         <vertx.version>3.5.0</vertx.version>
         <vertx.hk2.version>2.4.0</vertx.hk2.version>
         <vertx.guice.version>2.3.0</vertx.guice.version>
         <vertx.when.version>4.2.0</vertx.when.version>
-        <vertx.curator.version>3.1.0</vertx.curator.version>
         <netty.version>4.1.15.Final</netty.version>
 
+        <!--Test dependency version-->
+        <mockito.version>4.11.0</mockito.version>
+        <system.rules.version>1.19.0</system.rules.version>
+
         <!--Test properties-->
-        <test.cassandra.seeds>"localhost"</test.cassandra.seeds>
-        <test.cassandra.port>9042</test.cassandra.port>
+        <test.cassandra.seeds>"localhost:9042"</test.cassandra.seeds>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.datastax.cassandra</groupId>
-                <artifactId>cassandra-driver-core</artifactId>
+                <groupId>com.datastax.oss</groupId>
+                <artifactId>java-driver-core</artifactId>
                 <version>${cassandra.driver.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.datastax.cassandra</groupId>
-                <artifactId>cassandra-driver-mapping</artifactId>
+                <groupId>com.datastax.oss</groupId>
+                <artifactId>java-driver-query-builder</artifactId>
                 <version>${cassandra.driver.version}</version>
             </dependency>
             <!-- Use the same version of netty as vert.x -->
@@ -76,12 +77,6 @@
                 <version>${vertx.when.version}</version>
                 <optional>true</optional>
             </dependency>
-            <dependency>
-                <groupId>com.englishtown.vertx</groupId>
-                <artifactId>vertx-curator</artifactId>
-                <version>${vertx.curator.version}</version>
-                <optional>true</optional>
-            </dependency>
 
         </dependencies>
     </dependencyManagement>
@@ -91,6 +86,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -102,6 +98,18 @@
             <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-all</artifactId>
             <version>${cassandra.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>${system.rules.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-codegen</artifactId>
+            <version>${vertx.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -119,9 +127,6 @@
     <profiles>
         <profile>
             <id>embedded</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <test.cassandra.port>19042</test.cassandra.port>
             </properties>
@@ -148,25 +153,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>localhost</id>
-        </profile>
-        <profile>
-            <id>docker</id>
-            <properties>
-                <test.cassandra.seeds>"dockerhost"</test.cassandra.seeds>
-            </properties>
-        </profile>
     </profiles>
-
-    <distributionManagement>
-        <site>
-            <id>sling.englishtown.com</id>
-            <url>
-                dav:https://sling.englishtown.com/content/docs/${project.groupId}/${project.artifactId}/${project.version}
-            </url>
-        </site>
-    </distributionManagement>
 
     <scm>
         <connection>scm:git:ssh://git@github.com/ef-labs/${project.artifactId}.git</connection>

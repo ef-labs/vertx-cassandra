@@ -1,6 +1,6 @@
 package com.englishtown.vertx.cassandra.hk2;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.impl.DefaultCassandraSession;
@@ -20,10 +20,9 @@ public class HK2CassandraBinder extends AbstractBinder {
     @Override
     protected void configure() {
 
-        bind(Cluster.Builder.class).to(Cluster.Builder.class);
+        bind(CqlSessionBuilder.class).to(CqlSessionBuilder.class);
         bind(DefaultCassandraSession.class).to(CassandraSession.class).in(Singleton.class);
         bind(EnvironmentCassandraConfigurator.class).to(CassandraConfigurator.class).in(Singleton.class);
-        bind(EnvironmentCassandraConfigurator.DefaultEnvVarDelegate.class).to(EnvironmentCassandraConfigurator.EnvVarDelegate.class);
 
     }
 }

@@ -1,7 +1,8 @@
 package com.englishtown.vertx.cassandra.integration;
 
-import com.datastax.driver.core.Statement;
-import com.englishtown.vertx.cassandra.tablebuilder.TableBuilder;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import io.vertx.core.Context;
 import org.junit.Test;
 
@@ -23,9 +24,9 @@ public abstract class WhenCassandraSessionIntegrationTest extends IntegrationTes
                         assertEquals(context, vertx.getOrCreateContext());
                         assertNotNull(value);
 
-                        Statement statement = TableBuilder.create(keyspace, "test")
-                                .column("id", "text")
-                                .primaryKey("id");
+                        SimpleStatement statement = SchemaBuilder.createTable(keyspace, "test")
+                                .withPartitionKey("id", DataTypes.TEXT)
+                                .build();
 
                         // This promise will reject
                         return whenSession.executeAsync(statement);

@@ -1,15 +1,18 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.PlainTextAuthProvider;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -23,69 +26,51 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     public static final String ENV_VAR_PASSWORD = "CASSANDRA_PASSWORD";
 
     public static final Logger logger = LoggerFactory.getLogger(EnvironmentCassandraConfigurator.class);
-    private final EnvVarDelegate envVarDelegate;
 
     @Inject
-    public EnvironmentCassandraConfigurator(Vertx vertx, EnvVarDelegate envVarDelegate) {
+    public EnvironmentCassandraConfigurator(Vertx vertx) {
         super(vertx);
-        this.envVarDelegate = envVarDelegate;
-        init();
     }
 
-    public EnvironmentCassandraConfigurator(JsonObject config, EnvVarDelegate envVarDelegate) {
+    public EnvironmentCassandraConfigurator(JsonObject config) {
         super(config);
-        this.envVarDelegate = envVarDelegate;
-        init();
     }
 
-    private void init() {
-        initSeeds();
-        initLoadBalancingPolicy();
-        initAuthProvider();
-    }
 
-    private void initSeeds() {
-        String envVarSeeds = envVarDelegate.get(ENV_VAR_SEEDS);
+    @Override
+    protected Collection<InetSocketAddress> initSeeds() {
+        String envVarSeeds = System.getenv(ENV_VAR_SEEDS);
 
         if (!Strings.isNullOrEmpty(envVarSeeds)) {
             logger.debug("Using environment configuration of " + envVarSeeds);
             String[] seedsArray = envVarSeeds.split("\\|");
-            this.seeds = ImmutableList.copyOf(seedsArray);
+            return Arrays.stream(seedsArray).map(this::parseSeed).collect(Collectors.toList());
         }
+
+        return super.initSeeds();
     }
 
-    private void initLoadBalancingPolicy() {
-        String localDC = envVarDelegate.get(ENV_VAR_LOCAL_DC);
+    @Override
+    protected String initLocalDatacenter() {
+        String localDataCenter = System.getenv(ENV_VAR_LOCAL_DC);
 
-        if (!Strings.isNullOrEmpty(localDC)) {
-            logger.debug("Using environment config for Local DC of " + localDC);
-            loadBalancingPolicy = DCAwareRoundRobinPolicy.builder()
-                    .withLocalDc(localDC)
-                    .build();
-        } else {
-            logger.debug("No environment configuration found for local DC");
+        if (!Strings.isNullOrEmpty(localDataCenter)) {
+            return localDataCenter;
         }
+
+        return super.initLocalDatacenter();
     }
 
-    private void initAuthProvider() {
-        String username = envVarDelegate.get(ENV_VAR_USERNAME);
-        String password = envVarDelegate.get(ENV_VAR_PASSWORD);
+    @Override
+    protected AuthProvider initAuthProvider() {
+        String username = System.getenv(ENV_VAR_USERNAME);
+        String password = System.getenv(ENV_VAR_PASSWORD);
 
         if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
-            authProvider = new PlainTextAuthProvider(username, password);
+            return new ProgrammaticPlainTextAuthProvider(username, password);
         }
-    }
 
-    public interface EnvVarDelegate {
-        String get(String name);
-    }
-
-    public static class DefaultEnvVarDelegate implements EnvVarDelegate {
-
-        @Override
-        public String get(String name) {
-            return System.getenv(name);
-        }
+        return super.initAuthProvider();
     }
 
 }

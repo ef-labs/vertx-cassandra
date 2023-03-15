@@ -1,11 +1,13 @@
 package com.englishtown.vertx.cassandra.promises;
 
-import com.datastax.driver.core.*;
+import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.session.Session;
 import com.englishtown.promises.Promise;
 import com.englishtown.vertx.cassandra.CassandraSession;
 
 /**
- * When.java wrapper over {@link com.datastax.driver.core.Session}
+ * When.java wrapper over {@link Session}
  */
 public interface WhenCassandraSession extends AutoCloseable {
 
@@ -13,17 +15,17 @@ public interface WhenCassandraSession extends AutoCloseable {
      * Executes a cassandra statement asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
      * @param statement the statement to execute
-     * @return the promise for the {@link com.datastax.driver.core.ResultSet}
+     * @return the promise for the {@link ResultSet}
      */
-    Promise<ResultSet> executeAsync(Statement statement);
+    Promise<AsyncResultSet> executeAsync(Statement<?> statement);
 
     /**
      * Executes a cassandra CQL query asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
      * @param query the CQL query to execute
-     * @return the promise for the {@link com.datastax.driver.core.ResultSet}
+     * @return the promise for the {@link ResultSet}
      */
-    Promise<ResultSet> executeAsync(String query);
+    Promise<AsyncResultSet> executeAsync(String query);
 
     /**
      * This is a convenience method for {@code executeAsync(new SimpleStatement(query, values))}.
@@ -32,21 +34,21 @@ public interface WhenCassandraSession extends AutoCloseable {
      * @param values
      * @return
      */
-    Promise<ResultSet> executeAsync(String query, Object... values);
+    Promise<AsyncResultSet> executeAsync(String query, Object... values);
 
     /**
      * Prepares the provided query statement
      *
      * @param statement the query statement to prepare
-     * @return the promise for the {@link com.datastax.driver.core.PreparedStatement}
+     * @return the promise for the {@link PreparedStatement}
      */
-    Promise<PreparedStatement> prepareAsync(RegularStatement statement);
+    Promise<PreparedStatement> prepareAsync(SimpleStatement statement);
 
     /**
      * Prepares the provided query
      *
      * @param query the query to prepare
-     * @return the promise for the {@link com.datastax.driver.core.PreparedStatement}
+     * @return the promise for the {@link PreparedStatement}
      */
     Promise<PreparedStatement> prepareAsync(String query);
 
@@ -64,13 +66,6 @@ public interface WhenCassandraSession extends AutoCloseable {
      * otherwise.
      */
     boolean isClosed();
-
-    /**
-     * Returns the {@code Cluster} object this session is part of.
-     *
-     * @return the {@code Cluster} object this session is part of.
-     */
-    Cluster getCluster();
 
     /**
      * Return the {@link com.englishtown.vertx.cassandra.CassandraSession}

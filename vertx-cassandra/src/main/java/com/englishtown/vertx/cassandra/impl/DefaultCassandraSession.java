@@ -1,11 +1,23 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.*;
+import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.context.DriverContext;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metrics.Metrics;
+import com.datastax.oss.driver.api.core.session.Request;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.FutureUtils;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.ListenableFuture;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -16,113 +28,68 @@ import io.vertx.core.logging.LoggerFactory;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Default implementation of {@link CassandraSession}
  */
 public class DefaultCassandraSession implements CassandraSession {
 
-    private Cluster.Builder clusterBuilder;
     private final Vertx vertx;
     private List<Handler<AsyncResult<Void>>> onReadyCallbacks = new ArrayList<>();
 
-    protected Cluster cluster;
-    protected Session session;
-    protected Metrics metrics;
+    protected CqlSession session;
     protected CassandraConfigurator configurator;
     protected AsyncResult<Void> initResult;
 
     private final Logger logger = LoggerFactory.getLogger(DefaultCassandraSession.class);
 
     @Inject
-    public DefaultCassandraSession(Cluster.Builder clusterBuilder, CassandraConfigurator configurator, Vertx vertx) {
-        this.clusterBuilder = clusterBuilder;
+    public DefaultCassandraSession(CassandraConfigurator configurator, Vertx vertx) {
         this.configurator = configurator;
         this.vertx = vertx;
-        this.metrics = new Metrics(this);
 
         configurator.onReady(result -> {
             if (result.failed()) {
-                initResult = result;
-                runOnReadyCallbacks(initResult);
+                initResult = Future.failedFuture(result.cause());
+                runOnReadyCallbacks();
                 return;
             }
             try {
-                init(configurator);
+                init(result.result());
             } catch (Throwable t) {
                 initResult = Future.failedFuture(t);
-                runOnReadyCallbacks(initResult);
+                runOnReadyCallbacks();
             }
         });
     }
 
-    CassandraConfigurator getConfigurator() {
-        return configurator;
+    protected void init(CqlSessionBuilder sessionBuilder) {
+        // Build session
+        sessionBuilder.buildAsync()
+                .thenAccept(s -> {
+                    session = s;
+                    initResult = Future.succeededFuture();
+                })
+                .exceptionally(t -> {
+                    initResult = Future.failedFuture(t);
+                    return null;
+                })
+                .thenRun(this::runOnReadyCallbacks);
     }
 
-    protected void init(CassandraConfigurator configurator) {
-
-        // Get array of IPs, default to localhost
-        List<String> seeds = configurator.getSeeds();
-        if (seeds == null || seeds.isEmpty()) {
-            throw new RuntimeException("Cassandra seeds are missing");
-        }
-
-        // Add cassandra cluster contact points
-        for (String seed : seeds) {
-            clusterBuilder.addContactPoint(seed);
-        }
-
-        if (configurator.getPort() != null) {
-            clusterBuilder.withPort(configurator.getPort());
-        }
-
-        // Add policies to cluster builder
-        if (configurator.getLoadBalancingPolicy() != null) {
-            clusterBuilder.withLoadBalancingPolicy(configurator.getLoadBalancingPolicy());
-        }
-        if (configurator.getReconnectionPolicy() != null) {
-            clusterBuilder.withReconnectionPolicy(configurator.getReconnectionPolicy());
-        }
-
-        // Add pooling options to cluster builder
-        if (configurator.getPoolingOptions() != null) {
-            clusterBuilder.withPoolingOptions(configurator.getPoolingOptions());
-        }
-
-        // Add socket options to cluster builder
-        if (configurator.getSocketOptions() != null) {
-            clusterBuilder.withSocketOptions(configurator.getSocketOptions());
-        }
-
-        if (configurator.getQueryOptions() != null) {
-            clusterBuilder.withQueryOptions(configurator.getQueryOptions());
-        }
-
-        if (configurator.getMetricsOptions() != null) {
-            if (!configurator.getMetricsOptions().isJMXReportingEnabled()) {
-                clusterBuilder.withoutJMXReporting();
-            }
-        }
-
-        if (configurator.getAuthProvider() != null) {
-            clusterBuilder.withAuthProvider(configurator.getAuthProvider());
-        }
-
-        // Build cluster and connect
-        cluster = clusterBuilder.build();
-        reconnectAsync(result -> {
-            initResult = result;
-            runOnReadyCallbacks(initResult);
+    private void runOnReadyCallbacks() {
+        vertx.runOnContext(aVoid -> {
+            onReadyCallbacks.forEach(handler -> handler.handle(initResult));
+            onReadyCallbacks.clear();
         });
-
     }
 
-    private void runOnReadyCallbacks(AsyncResult<Void> result) {
-        initResult = result;
-        onReadyCallbacks.forEach(handler -> handler.handle(result));
-        onReadyCallbacks.clear();
+    @NonNull
+    @Override
+    public String getName() {
+        return getSession().getName();
     }
 
     /**
@@ -130,8 +97,60 @@ public class DefaultCassandraSession implements CassandraSession {
      */
     @Override
     public Metadata getMetadata() {
-        Cluster cluster = getCluster();
-        return cluster == null ? null : cluster.getMetadata();
+        return getSession().getMetadata();
+    }
+
+    @Override
+    public boolean isSchemaMetadataEnabled() {
+        return getSession().isSchemaMetadataEnabled();
+    }
+
+    @NonNull
+    @Override
+    public CompletionStage<Metadata> setSchemaMetadataEnabled(@Nullable Boolean newValue) {
+        return getSession().setSchemaMetadataEnabled(newValue);
+    }
+
+    @NonNull
+    @Override
+    public CompletionStage<Metadata> refreshSchemaAsync() {
+        return getSession().refreshSchemaAsync();
+    }
+
+    @NonNull
+    @Override
+    public CompletionStage<Boolean> checkSchemaAgreementAsync() {
+        return getSession().checkSchemaAgreementAsync();
+    }
+
+    @NonNull
+    @Override
+    public DriverContext getContext() {
+        return getSession().getContext();
+    }
+
+    @NonNull
+    @Override
+    public Optional<CqlIdentifier> getKeyspace() {
+        return getSession().getKeyspace();
+    }
+
+    @NonNull
+    @Override
+    public Optional<Metrics> getMetrics() {
+        return getSession().getMetrics();
+    }
+
+    @Nullable
+    @Override
+    public <RequestT extends Request, ResultT> ResultT execute(@NonNull RequestT request, @NonNull GenericType<ResultT> resultType) {
+        return getSession().execute(request, resultType);
+    }
+
+    @NonNull
+    @Override
+    public CompletionStage<Void> closeFuture() {
+        return getSession().closeFuture();
     }
 
     /**
@@ -140,58 +159,6 @@ public class DefaultCassandraSession implements CassandraSession {
     @Override
     public boolean isClosed() {
         return (session == null || session.isClosed());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Cluster getCluster() {
-        return session == null ? null : session.getCluster();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public State getState() {
-        return getSession().getState();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reconnect() {
-        logger.debug("Call to reconnect the session has been made");
-        Session oldSession = session;
-        session = cluster.connect();
-        if (oldSession != null) {
-            oldSession.closeAsync();
-        }
-        metrics.afterReconnect();
-    }
-
-    @Override
-    public void reconnectAsync(Handler<AsyncResult<Void>> callback) {
-        logger.debug("Call to reconnect the session has been made");
-        Session oldSession = session;
-        FutureUtils.addCallback(cluster.connectAsync(), new FutureCallback<Session>() {
-            @Override
-            public void onSuccess(Session session) {
-                DefaultCassandraSession.this.session = session;
-                if (oldSession != null) {
-                    oldSession.closeAsync();
-                }
-                callback.handle(Future.succeededFuture());
-                metrics.afterReconnect();
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                callback.handle(Future.failedFuture(throwable));
-            }
-        }, vertx);
     }
 
     /**
@@ -218,7 +185,7 @@ public class DefaultCassandraSession implements CassandraSession {
      * {@inheritDoc}
      */
     @Override
-    public Session getSession() {
+    public CqlSession getSession() {
         checkInitialized();
         return session;
     }
@@ -234,99 +201,14 @@ public class DefaultCassandraSession implements CassandraSession {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getLoggedKeyspace() {
-        return getSession().getLoggedKeyspace();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Session init() {
-        return getSession().init();
-    }
-
-    @Override
-    public ListenableFuture<Session> initAsync() {
-        return getSession().initAsync();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSet execute(String query) {
-        return getSession().execute(query);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSet execute(String query, Object... values) {
-        return getSession().execute(query, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSet execute(String query, Map<String, Object> values) {
-        return getSession().execute(query, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSet execute(Statement statement) {
-        return getSession().execute(statement);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSetFuture executeAsync(String query) {
-        return getSession().executeAsync(query);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSetFuture executeAsync(String query, Object... values) {
-        return getSession().executeAsync(query, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSetFuture executeAsync(String query, Map<String, Object> values) {
-        return getSession().executeAsync(query, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ResultSetFuture executeAsync(Statement statement) {
-        return getSession().executeAsync(statement);
-    }
-
-    /**
      * Executes a cassandra statement asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
      * @param statement the statement to execute
      * @param callback  the callback for on completion
      */
     @Override
-    public void executeAsync(Statement statement, FutureCallback<ResultSet> callback) {
-        addCallback(executeAsync(statement), callback);
+    public void executeAsync(Statement<?> statement, FutureCallback<AsyncResultSet> callback) {
+        addCallback(getSession().executeAsync(statement), callback);
     }
 
     /**
@@ -336,7 +218,7 @@ public class DefaultCassandraSession implements CassandraSession {
      * @param callback the callback for on completion
      */
     @Override
-    public void executeAsync(String query, FutureCallback<ResultSet> callback) {
+    public void executeAsync(String query, FutureCallback<AsyncResultSet> callback) {
         addCallback(executeAsync(query), callback);
     }
 
@@ -344,23 +226,7 @@ public class DefaultCassandraSession implements CassandraSession {
      * {@inheritDoc}
      */
     @Override
-    public PreparedStatement prepare(String query) {
-        return getSession().prepare(query);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public PreparedStatement prepare(RegularStatement statement) {
-        return getSession().prepare(statement);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ListenableFuture<PreparedStatement> prepareAsync(String query) {
+    public CompletionStage<PreparedStatement> prepareAsync(String query) {
         return getSession().prepareAsync(query);
     }
 
@@ -368,7 +234,7 @@ public class DefaultCassandraSession implements CassandraSession {
      * {@inheritDoc}
      */
     @Override
-    public ListenableFuture<PreparedStatement> prepareAsync(RegularStatement statement) {
+    public CompletionStage<PreparedStatement> prepareAsync(SimpleStatement statement) {
         return getSession().prepareAsync(statement);
     }
 
@@ -379,7 +245,7 @@ public class DefaultCassandraSession implements CassandraSession {
      * @param callback  the callback for on completion
      */
     @Override
-    public void prepareAsync(RegularStatement statement, FutureCallback<PreparedStatement> callback) {
+    public void prepareAsync(SimpleStatement statement, FutureCallback<PreparedStatement> callback) {
         addCallback(prepareAsync(statement), callback);
     }
 
@@ -398,26 +264,26 @@ public class DefaultCassandraSession implements CassandraSession {
      * {@inheritDoc}
      */
     @Override
-    public CloseFuture closeAsync() {
+    public CompletionStage<Void> closeAsync() {
         return getSession().closeAsync();
+    }
+
+    @NonNull
+    @Override
+    public CompletionStage<Void> forceCloseAsync() {
+        return this.getSession().forceCloseAsync();
     }
 
     @Override
     public void close() {
         logger.debug("Call to close the session has been made");
-        if (metrics != null) {
-            metrics.close();
-            metrics = null;
-        }
-        if (cluster != null) {
-            cluster.closeAsync().force();
-            cluster = null;
+        if (session != null) {
+            session.forceCloseAsync();
             session = null;
         }
-        clusterBuilder = null;
     }
 
-    private <V> void addCallback(final ListenableFuture<V> future, FutureCallback<V> callback) {
+    private <V> void addCallback(final CompletionStage<V> future, FutureCallback<V> callback) {
         FutureUtils.addCallback(future, callback, vertx);
     }
 

@@ -1,6 +1,7 @@
 package com.englishtown.vertx.cassandra.promises.impl;
 
-import com.datastax.driver.core.*;
+import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.englishtown.promises.Deferred;
 import com.englishtown.promises.Promise;
 import com.englishtown.promises.When;
@@ -8,10 +9,10 @@ import com.englishtown.vertx.cassandra.CassandraSession;
 import com.englishtown.vertx.cassandra.FutureUtils;
 import com.englishtown.vertx.cassandra.promises.WhenCassandraSession;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.ListenableFuture;
 import io.vertx.core.Vertx;
 
 import javax.inject.Inject;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Default implementation of {@link com.englishtown.vertx.cassandra.promises.WhenCassandraSession}
@@ -33,11 +34,11 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      * Executes a cassandra statement asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
      * @param statement the statement to execute
-     * @return the promise for the {@link com.datastax.driver.core.ResultSet}
+     * @return the promise for the {@link ResultSet}
      */
     @Override
 
-    public Promise<ResultSet> executeAsync(Statement statement) {
+    public Promise<AsyncResultSet> executeAsync(Statement<?> statement) {
         return convertFuture(session.executeAsync(statement));
     }
 
@@ -45,10 +46,10 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      * Executes a cassandra CQL query asynchronously.  Ensures the callback is executed on the correct vert.x context.
      *
      * @param query the CQL query to execute
-     * @return the promise for the {@link com.datastax.driver.core.ResultSet}
+     * @return the promise for the {@link ResultSet}
      */
     @Override
-    public Promise<ResultSet> executeAsync(String query) {
+    public Promise<AsyncResultSet> executeAsync(String query) {
         return convertFuture(session.executeAsync(query));
     }
 
@@ -60,7 +61,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      * @return
      */
     @Override
-    public Promise<ResultSet> executeAsync(String query, Object... values) {
+    public Promise<AsyncResultSet> executeAsync(String query, Object... values) {
         return convertFuture(session.executeAsync(query, values));
     }
 
@@ -68,10 +69,10 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      * Prepares the provided query statement
      *
      * @param statement the query statement to prepare
-     * @return the promise for the {@link com.datastax.driver.core.PreparedStatement}
+     * @return the promise for the {@link PreparedStatement}
      */
     @Override
-    public Promise<PreparedStatement> prepareAsync(RegularStatement statement) {
+    public Promise<PreparedStatement> prepareAsync(SimpleStatement statement) {
         return convertFuture(session.prepareAsync(statement));
     }
 
@@ -79,7 +80,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
      * Prepares the provided query
      *
      * @param query the query to prepare
-     * @return the promise for the {@link com.datastax.driver.core.PreparedStatement}
+     * @return the promise for the {@link PreparedStatement}
      */
     @Override
     public Promise<PreparedStatement> prepareAsync(String query) {
@@ -105,16 +106,6 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
     @Override
     public boolean isClosed() {
         return session.isClosed();
-    }
-
-    /**
-     * Returns the {@code Cluster} object this session is part of.
-     *
-     * @return the {@code Cluster} object this session is part of.
-     */
-    @Override
-    public Cluster getCluster() {
-        return session.getCluster();
     }
 
     /**
@@ -155,7 +146,7 @@ public class DefaultWhenCassandraSession implements WhenCassandraSession {
         session.close();
     }
 
-    private <T> Promise<T> convertFuture(ListenableFuture<T> future) {
+    private <T> Promise<T> convertFuture(CompletionStage<T> future) {
 
         Deferred<T> d = when.defer();
 

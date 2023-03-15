@@ -1,350 +1,92 @@
 package com.englishtown.vertx.cassandra.impl;
 
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link DefaultCassandraSession}
  */
-@RunWith(MockitoJUnitRunner.class)
 public class DefaultCassandraSessionTest {
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    DefaultCassandraSession cassandraSession;
-    List<String> seeds = new ArrayList<>();
-    Configuration configuration = Configuration.builder().build();
+    private DefaultCassandraSession cassandraSession;
 
     @Mock
-    Vertx vertx;
+    private Vertx vertx;
     @Mock
-    Context context;
+    private CassandraConfigurator configurator;
     @Mock
-    CassandraConfigurator configurator;
+    private CqlSessionBuilder sessionBuilder;
     @Mock
-    Cluster.Builder clusterBuilder;
+    private CqlSession session;
     @Mock
-    Cluster cluster;
-    @Mock
-    Session session;
-    @Mock
-    Metadata metadata;
-    @Mock
-    FutureCallback<ResultSet> callback;
-    @Mock
-    ListenableFuture<PreparedStatement> preparedStatementFuture;
-    @Mock
-    FutureCallback<PreparedStatement> preparedStatementCallback;
-    @Mock
-    CloseFuture closeFuture;
+    private Handler<AsyncResult<Void>> callback;
+
     @Captor
-    ArgumentCaptor<Statement> statementCaptor;
+    ArgumentCaptor<AsyncResult<Void>> callbackCaptor;
     @Captor
-    ArgumentCaptor<String> queryCaptor;
-    @Captor
-    ArgumentCaptor<Runnable> runnableCaptor;
-    @Captor
-    ArgumentCaptor<Handler<Void>> handlerCaptor;
-    @Captor
-    ArgumentCaptor<Handler<AsyncResult<Void>>> onReadyCaptor;
-    @Captor
-    ArgumentCaptor<Executor> executorCaptor;
-
-    private BiConsumer<DefaultCassandraSession, CompletableFuture<Void>> onReadyFail = (cassandraSession, future) -> {
-        cassandraSession.onReady(result -> {
-            if (result.succeeded()) {
-                future.completeExceptionally(new RuntimeException("Should not succeed"));
-            } else {
-                future.complete(null);
-            }
-        });
-    };
-
-    public static class TestLoadBalancingPolicy implements LoadBalancingPolicy {
-        @Override
-        public void init(Cluster cluster, Collection<Host> hosts) {
-        }
-
-        @Override
-        public HostDistance distance(Host host) {
-            return null;
-        }
-
-        @Override
-        public Iterator<Host> newQueryPlan(String loggedKeyspace, Statement statement) {
-            return null;
-        }
-
-        @Override
-        public void onAdd(Host host) {
-        }
-
-        @Override
-        public void onUp(Host host) {
-        }
-
-        @Override
-        public void onDown(Host host) {
-        }
-
-        @Override
-        public void onRemove(Host host) {
-        }
-
-        @Override
-        public void close() {
-
-        }
-    }
+    ArgumentCaptor<Handler<AsyncResult<CqlSessionBuilder>>> onReadyCaptor;
 
     @Before
     public void setUp() {
 
-        SettableFuture<Session> sessionFuture = SettableFuture.create();
-
-        when(vertx.getOrCreateContext()).thenReturn(context);
         doAnswer(invocation -> {
             Handler<Void> handler = (Handler<Void>) invocation.getArguments()[0];
             handler.handle(null);
             return null;
-        }).when(context).runOnContext(any());
+        }).when(vertx).runOnContext(any());
 
-        when(clusterBuilder.build()).thenReturn(cluster);
-        when(cluster.getConfiguration()).thenReturn(configuration);
-        when(cluster.connectAsync()).thenReturn(sessionFuture);
-        when(cluster.getMetadata()).thenReturn(metadata);
-        when(cluster.closeAsync()).thenReturn(closeFuture);
-        when(closeFuture.force()).thenReturn(closeFuture);
+        CompletableFuture<CqlSession> future = new CompletableFuture<>();
+        when(sessionBuilder.buildAsync()).thenReturn(future);
+        future.complete(session);
 
-        when(configurator.getSeeds()).thenReturn(seeds);
-        seeds.add("127.0.0.1");
+    }
 
-        when(session.getCluster()).thenReturn(cluster);
-        when(session.prepareAsync(any(RegularStatement.class))).thenReturn(preparedStatementFuture);
-        when(session.prepareAsync(anyString())).thenReturn(preparedStatementFuture);
+    @Test
+    public void testCtorInit() {
 
-        cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
+        cassandraSession = new DefaultCassandraSession(configurator, vertx);
 
         verify(configurator).onReady(onReadyCaptor.capture());
-        onReadyCaptor.getValue().handle(Future.succeededFuture());
+        onReadyCaptor.getValue().handle(Future.succeededFuture(sessionBuilder));
 
-        sessionFuture.set(session);
-
+        cassandraSession.onReady(callback);
+        verify(callback).handle(callbackCaptor.capture());
+        assertTrue(callbackCaptor.getValue().succeeded());
     }
 
     @Test
-    public void testInit() throws Exception {
+    public void testCtorInitFail() {
 
-        seeds.clear();
-        seeds.add("127.0.0.1");
-        seeds.add("127.0.0.2");
-        seeds.add("127.0.0.3");
+        cassandraSession = new DefaultCassandraSession(configurator, vertx);
 
-        LoadBalancingPolicy lbPolicy = mock(LoadBalancingPolicy.class);
-        when(configurator.getLoadBalancingPolicy()).thenReturn(lbPolicy);
-        PoolingOptions poolingOptions = mock(PoolingOptions.class);
-        when(configurator.getPoolingOptions()).thenReturn(poolingOptions);
-        SocketOptions socketOptions = mock(SocketOptions.class);
-        when(configurator.getSocketOptions()).thenReturn(socketOptions);
-        QueryOptions queryOptions = mock(QueryOptions.class);
-        when(configurator.getQueryOptions()).thenReturn(queryOptions);
-        MetricsOptions metricsOptions = mock(MetricsOptions.class);
-        when(configurator.getMetricsOptions()).thenReturn(metricsOptions);
-
-        cassandraSession.init(configurator);
-        verify(clusterBuilder, times(4)).addContactPoint(anyString());
-        verify(clusterBuilder).withLoadBalancingPolicy(eq(lbPolicy));
-        verify(clusterBuilder).withPoolingOptions(eq(poolingOptions));
-        verify(clusterBuilder, times(2)).build();
-        verify(cluster, times(2)).connectAsync();
-
-        verify(cluster, times(0)).getMetadata();
-        cassandraSession.getMetadata();
-        verify(cluster, times(1)).getMetadata();
-
-        verify(cluster, times(0)).isClosed();
-        verify(session, times(0)).isClosed();
-        cassandraSession.isClosed();
-        verify(cluster, times(0)).isClosed();
-        verify(session, times(1)).isClosed();
-
-        assertEquals(cluster, cassandraSession.getCluster());
-
-        seeds.clear();
-        try {
-            cassandraSession.init(configurator);
-            fail();
-        } catch (Throwable t) {
-            // Expected
-        }
-
-    }
-
-    @Test
-    public void testCtorInitFail() throws Exception {
-
-        seeds.clear();
-        reset(configurator);
-
-        DefaultCassandraSession cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        onReadyFail.accept(cassandraSession, future);
-
+        Throwable cause = new RuntimeException();
         verify(configurator).onReady(onReadyCaptor.capture());
-        onReadyCaptor.getValue().handle(Future.succeededFuture());
-        future.get();
+        onReadyCaptor.getValue().handle(Future.failedFuture(cause));
 
-        future = new CompletableFuture<>();
-        onReadyFail.accept(cassandraSession, future);
-        future.get();
-
+        cassandraSession.onReady(callback);
+        verify(callback).handle(callbackCaptor.capture());
+        assertEquals(cause, callbackCaptor.getValue().cause());
     }
 
-    @Test
-    public void testCtorReadyFail() throws Exception {
-
-        reset(configurator);
-
-        DefaultCassandraSession cassandraSession = new DefaultCassandraSession(clusterBuilder, configurator, vertx);
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        onReadyFail.accept(cassandraSession, future);
-
-        verify(configurator).onReady(onReadyCaptor.capture());
-        onReadyCaptor.getValue().handle(Future.failedFuture("Test fail"));
-        future.get();
-
-        future = new CompletableFuture<>();
-        onReadyFail.accept(cassandraSession, future);
-        future.get();
-
-    }
-
-    @Test
-    public void testExecuteAsync() throws Exception {
-
-        Statement statement = mock(Statement.class);
-        ResultSetFuture future = mock(ResultSetFuture.class);
-        when(session.executeAsync(any(Statement.class))).thenReturn(future);
-
-        cassandraSession.executeAsync(statement, callback);
-        verify(session).executeAsync(eq(statement));
-        verify(future).addListener(runnableCaptor.capture(), executorCaptor.capture());
-
-        ResultSet resultSet = mock(ResultSet.class);
-        RuntimeException e = new RuntimeException("Unit test exception");
-        when(future.get()).thenReturn(resultSet).thenThrow(e);
-
-        executorCaptor.getValue().execute(runnableCaptor.getValue());
-        verify(context, times(2)).runOnContext(handlerCaptor.capture());
-        handlerCaptor.getValue().handle(null);
-        verify(callback).onSuccess(eq(resultSet));
-
-        executorCaptor.getValue().execute(runnableCaptor.getValue());
-        verify(context, times(3)).runOnContext(handlerCaptor.capture());
-        handlerCaptor.getValue().handle(null);
-        verify(callback, times(3)).onFailure(eq(e));
-
-    }
-
-    @Test
-    public void testExecuteAsync_Query() throws Exception {
-
-        String query = "SELECT * FROM table";
-        ResultSetFuture future = mock(ResultSetFuture.class);
-        when(session.executeAsync(anyString())).thenReturn(future);
-
-        cassandraSession.executeAsync(query, callback);
-        verify(session).executeAsync(queryCaptor.capture());
-        assertEquals(query, queryCaptor.getValue());
-        verify(future).addListener(any(Runnable.class), any(Executor.class));
-
-    }
-
-    @Test
-    public void testExecute() throws Exception {
-
-        String query = "SELECT * FROM table;";
-
-        cassandraSession.execute(query);
-        verify(session).execute(queryCaptor.capture());
-        assertEquals(query, queryCaptor.getValue());
-
-    }
-
-    @Test
-    public void testPrepareAsync_Statement() throws Exception {
-        RegularStatement statement = QueryBuilder.select()
-                .from("ks", "table")
-                .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
-
-        cassandraSession.prepareAsync(statement, preparedStatementCallback);
-        verify(session).prepareAsync(eq(statement));
-        verify(preparedStatementFuture).addListener(any(Runnable.class), any(Executor.class));
-    }
-
-    @Test
-    public void testPrepareAsync_Query() throws Exception {
-        String query = "SELECT * FROM ks.table where id = ?";
-        cassandraSession.prepareAsync(query, preparedStatementCallback);
-        verify(session).prepareAsync(eq(query));
-        verify(preparedStatementFuture).addListener(any(Runnable.class), any(Executor.class));
-    }
-
-    @Test
-    public void testPrepare_Statement() throws Exception {
-        RegularStatement statement = QueryBuilder.select()
-                .from("ks", "table")
-                .where(QueryBuilder.eq("id", QueryBuilder.bindMarker()));
-
-        cassandraSession.prepare(statement);
-        verify(session).prepare(eq(statement));
-    }
-
-    @Test
-    public void testPrepare_Query() throws Exception {
-        String query = "SELECT * FROM ks.table where id = ?";
-        cassandraSession.prepare(query);
-        verify(session).prepare(eq(query));
-    }
-
-    @Test
-    public void testGetMetadata() throws Exception {
-
-        assertEquals(metadata, cassandraSession.getMetadata());
-
-    }
-
-    @Test
-    public void testClose() throws Exception {
-        cassandraSession.close();
-        verify(cluster).closeAsync();
-        verify(closeFuture).force();
-    }
 }
