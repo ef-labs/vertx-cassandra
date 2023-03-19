@@ -4,6 +4,8 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -20,6 +22,8 @@ import org.mockito.junit.MockitoRule;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 
+import static com.englishtown.vertx.cassandra.impl.JsonCassandraConfigurator.CONFIG_AUTH;
+import static com.englishtown.vertx.cassandra.impl.JsonCassandraConfigurator.CONFIG_LOADER;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -121,7 +125,7 @@ public class JsonCassandraConfiguratorTest {
                 .put("username", username)
                 .put("password", password);
 
-        config.put("auth", auth);
+        config.put(CONFIG_AUTH, auth);
 
         configurator = new JsonCassandraConfigurator(config);
         authProvider = configurator.initAuthProvider();
@@ -165,6 +169,28 @@ public class JsonCassandraConfiguratorTest {
             // expected
         }
 
+    }
+
+
+    @Test
+    public void testInitConfigLoader() {
+
+        JsonCassandraConfigurator configurator = new JsonCassandraConfigurator(config);
+        DriverConfigLoader loader = configurator.initConfigLoader();
+
+        assertNull(loader);
+
+        JsonObject configLoader = new JsonObject()
+                .put("file", "target/test-classes/cassandra.conf");
+
+        config.put(CONFIG_LOADER, configLoader);
+
+        configurator = new JsonCassandraConfigurator(config);
+        loader = configurator.initConfigLoader();
+        assertNotNull(loader);
+
+        DriverExecutionProfile profile = loader.getInitialConfig().getProfile("slow");
+        assertNotNull(profile);
     }
 
 }

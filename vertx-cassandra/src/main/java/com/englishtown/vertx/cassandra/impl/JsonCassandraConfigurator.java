@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.englishtown.vertx.cassandra.CassandraConfigurator;
 import com.google.common.base.Strings;
 import io.vertx.core.AsyncResult;
@@ -12,8 +13,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +36,10 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
     public static final String CONFIG_SEEDS = "seeds";
     public static final String CONFIG_AUTH = "auth";
     public static final String CONFIG_LOCAL_DC = "local_dc";
+    public static final String CONFIG_LOADER = "config_loader";
 
     public static final int DEFAULT_PORT = 9042;
+    private static final Logger logger = LoggerFactory.getLogger(JsonCassandraConfigurator.class);
 
     @Inject
     public JsonCassandraConfigurator(Vertx vertx) {
@@ -55,17 +61,26 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         Collection<InetSocketAddress> seeds = initSeeds();
         if (seeds != null) {
+            logger.info("Setting seeds: {}", seeds);
             sessionBuilder.addContactPoints(seeds);
         }
 
         String localDatacenter = initLocalDatacenter();
         if (!Strings.isNullOrEmpty(localDatacenter)) {
+            logger.info("Setting local datacenter: {}", localDatacenter);
             sessionBuilder.withLocalDatacenter(localDatacenter);
         }
 
         AuthProvider authProvider = initAuthProvider();
         if (authProvider != null) {
+            logger.info("Setting auth provider: {}", authProvider.getClass().getSimpleName());
             sessionBuilder.withAuthProvider(authProvider);
+        }
+
+        DriverConfigLoader loader = initConfigLoader();
+        if (loader != null) {
+            logger.info("Setting config load");
+            sessionBuilder.withConfigLoader(loader);
         }
     }
 
@@ -116,6 +131,22 @@ public class JsonCassandraConfigurator implements CassandraConfigurator {
 
         return new ProgrammaticPlainTextAuthProvider(username, password);
 
+    }
+
+    protected DriverConfigLoader initConfigLoader() {
+
+        JsonObject loader = config.getJsonObject(CONFIG_LOADER);
+        if (loader == null) {
+            return null;
+        }
+
+        String s = loader.getString("file");
+        if (!Strings.isNullOrEmpty(s)) {
+            File file = new File(s);
+            return DriverConfigLoader.fromFile(file);
+        }
+
+        return null;
     }
 
 }

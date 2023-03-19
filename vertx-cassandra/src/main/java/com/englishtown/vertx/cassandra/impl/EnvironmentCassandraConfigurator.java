@@ -2,6 +2,7 @@ package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.google.common.base.Strings;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -9,6 +10,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +26,7 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
     public static final String ENV_VAR_LOCAL_DC = "CASSANDRA_LOCAL_DC";
     public static final String ENV_VAR_USERNAME = "CASSANDRA_USERNAME";
     public static final String ENV_VAR_PASSWORD = "CASSANDRA_PASSWORD";
+    public static final String ENV_VAR_CONFIG_LOADER_FILE = "CASSANDRA_CONFIG_LOADER_FILE";
 
     public static final Logger logger = LoggerFactory.getLogger(EnvironmentCassandraConfigurator.class);
 
@@ -73,4 +76,14 @@ public class EnvironmentCassandraConfigurator extends JsonCassandraConfigurator 
         return super.initAuthProvider();
     }
 
+    @Override
+    protected DriverConfigLoader initConfigLoader() {
+        String file = System.getenv(ENV_VAR_CONFIG_LOADER_FILE);
+
+        if (!Strings.isNullOrEmpty(file)) {
+            return DriverConfigLoader.fromFile(new File(file));
+        }
+
+        return super.initConfigLoader();
+    }
 }

@@ -2,6 +2,8 @@ package com.englishtown.vertx.cassandra.impl;
 
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -112,4 +114,23 @@ public class EnvironmentCassandraConfiguratorTest {
         assertThat(authProvider, instanceOf(ProgrammaticPlainTextAuthProvider.class));
 
     }
+
+    @Test
+    public void testInitConfigLoader() {
+
+        EnvironmentCassandraConfigurator configurator = new EnvironmentCassandraConfigurator(config);
+        DriverConfigLoader loader = configurator.initConfigLoader();
+
+        assertNull(loader);
+
+        environmentVariables.set(EnvironmentCassandraConfigurator.ENV_VAR_CONFIG_LOADER_FILE, "target/test-classes/cassandra.conf");
+
+        configurator = new EnvironmentCassandraConfigurator(config);
+        loader = configurator.initConfigLoader();
+        assertNotNull(loader);
+
+        DriverExecutionProfile profile = loader.getInitialConfig().getProfile("slow");
+        assertNotNull(profile);
+    }
+
 }
